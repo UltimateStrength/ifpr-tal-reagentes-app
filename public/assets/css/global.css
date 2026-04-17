@@ -5,10 +5,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-[hidden] {
-  display: none !important;
-}
-
 :root {
   --green: #2f9e3f;
   --red:   #ca191f;
