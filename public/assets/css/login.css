@@ -25,7 +25,8 @@
 #login-title {
   font-size: 0.95rem;
   color: var(--muted);
-  align-self: flex-start;
+  text-align: center; /* centralizado */
+  align-self: center;
 }
 
 #login-card label {
@@ -59,12 +60,21 @@
   font-size: 0.85rem;
 }
 
+#login-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
 #ifpr-logo {
   width: 72px;
-  margin-top: 16px;
+  padding-bottom: 10px;
 }
 
 #link-about {
   font-size: 0.85rem;
   color: var(--green);
+  text-decoration: underline;
 }
