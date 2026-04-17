@@ -1,0 +1,24 @@
+<div class="page" id="page-substances">
+  <p class="page-title">Substâncias</p>
+  <input
+    type="search"
+    id="search-input"
+    placeholder="Buscar substância..."
+    style="width:100%;padding:10px 12px;border-radius:8px;
+           background:var(--gray);font-size:1rem;
+           margin:12px 0 16px;border:2px solid transparent;"
+  >
+  <div id="substances-list"></div>
+</div>
+
+<!-- Modal de confirmação de remoção -->
+<div class="modal-overlay" id="remove-modal" hidden>
+  <div class="modal-box">
+    <p class="modal-title">Remover embalagem?</p>
+    <p class="modal-message" id="modal-remove-msg"></p>
+    <div class="modal-actions">
+      <button class="modal-cancel"  id="modal-cancel">Cancelar</button>
+      <button class="modal-confirm" id="modal-confirm">Remover</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,194 @@
+/* Padding geral das páginas */
+.page {
+  padding: 20px 16px 32px;
+}
+
+.page-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.page-greeting {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* Cards de indicadores (home) */
+.indicator-card {
+  background: var(--gray);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.indicator-card .label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.indicator-card .value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.indicator-card.warning .value { color: #e07b00; }
+.indicator-card.danger  .value { color: var(--red); }
+
+/* Lista de substâncias */
+.substance-group {
+  margin-bottom: 20px;
+}
+
+.substance-group-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 0 4px;
+  border-bottom: 2px solid var(--green);
+  margin-bottom: 8px;
+}
+
+.substance-index {
+  font-size: 0.85rem;
+  color: var(--muted);
+  min-width: 24px;
+}
+
+.substance-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Embalagem individual */
+.package-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--gray);
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.package-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.package-sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.package-details {
+  font-size: 0.9rem;
+}
+
+.package-expiry {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Badge de status de validade */
+.badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.badge.ok      { background: #d4edda; color: #1a6b2a; }
+.badge.soon    { background: #fff3cd; color: #7d5a00; }
+.badge.expired { background: #f8d7da; color: #8b1a20; }
+
+/* Botão de remover */
+.btn-remove {
+  color: var(--red);
+  font-size: 1.2rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.btn-remove:active {
+  background: #fde8e8;
+}
+
+/* Formulário de adição */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  background: var(--gray);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  width: 100%;
+  border: 2px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--green);
+  outline: none;
+}
+
+.btn-primary {
+  width: 100%;
+  background: var(--green);
+  color: var(--white);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 14px;
+  border-radius: var(--radius);
+  transition: opacity 0.15s;
+}
+
+.btn-primary:active { opacity: 0.8; }
+
+.btn-secondary {
+  width: 100%;
+  background: var(--gray);
+  color: var(--text);
+  font-size: 1rem;
+  padding: 14px;
+  border-radius: var(--radius);
+  margin-top: 8px;
+}
+
+/* Feedback de ação */
+.toast {
+  position: fixed;
+  bottom: calc(var(--nav-h) + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 0.85rem;
+  padding: 10px 20px;
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 200;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.toast.show { opacity: 1; }

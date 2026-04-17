@@ -1,0 +1,30 @@
+<div class="page" id="page-menu">
+  <p class="page-title">Menu</p>
+
+  <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
+
+    <button class="btn-secondary" id="btn-export">
+      ⬇️ Exportar backup (JSON)
+    </button>
+
+    <div class="form-group" style="margin-bottom:0">
+      <label for="restore-file">Restaurar backup</label>
+      <input type="file" id="restore-file" accept=".json" style="padding:8px;">
+    </div>
+    <button class="btn-primary" id="btn-restore">
+      🔄 Restaurar
+    </button>
+
+    <hr style="border:none;border-top:1px solid #eee;margin:8px 0;">
+
+    <button class="btn-secondary" id="btn-logout"
+            style="color:var(--red);font-weight:600;">
+      Sair
+    </button>
+
+  </div>
+
+  <p id="menu-feedback"
+     style="text-align:center;margin-top:16px;font-size:0.85rem;
+            color:var(--green);min-height:20px;"></p>
+</div>

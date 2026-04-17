@@ -1,0 +1,31 @@
+<div class="page" id="page-import">
+  <p class="page-title">Importar CSV</p>
+
+  <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">
+    O arquivo deve ter as colunas: <strong>nome, quantidade, validade</strong><br>
+    Validade no formato <strong>AAAA-MM</strong> (ex: 2026-05)
+  </p>
+
+  <div class="form-group">
+    <label>Ao encontrar duplicatas:</label>
+    <div class="strategy-options">
+      <button class="strategy-btn selected" data-strategy="sum">Somar</button>
+      <button class="strategy-btn"          data-strategy="replace">Substituir</button>
+      <button class="strategy-btn"          data-strategy="ignore">Ignorar</button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="csv-file">Arquivo CSV</label>
+    <input type="file" id="csv-file" accept=".csv" style="padding:8px;">
+  </div>
+
+  <button class="btn-primary" id="btn-import">Importar</button>
+
+  <div id="import-result" style="margin-top:20px;display:none;">
+    <p id="import-summary" style="font-size:0.9rem;margin-bottom:8px;"></p>
+    <div id="import-errors"
+         style="background:#fff3cd;border-radius:8px;padding:12px;
+                font-size:0.8rem;display:none;"></div>
+  </div>
+</div>

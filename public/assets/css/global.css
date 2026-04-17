@@ -1,0 +1,104 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:root {
+  --green: #2f9e3f;
+  --red:   #ca191f;
+  --white: #ffffff;
+  --gray:  #f2f2f2;
+  --text:  #1a1a1a;
+  --muted: #666666;
+  --nav-h: 64px;
+  --radius: 10px;
+}
+
+html, body {
+  height: 100%;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--white);
+  overflow: hidden; /* o scroll é por página, não pelo body */
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+input {
+  font-family: inherit;
+  font-size: 1rem;
+  outline: none;
+  border: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: var(--green);
+  text-decoration: none;
+}
+
+/* Área de conteúdo — scroll interno por página */
+#page-content {
+  height: calc(100dvh - var(--nav-h));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Navbar inferior */
+#bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-h);
+  background: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 100;
+}
+
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  transition: background 0.15s;
+  flex: 1;
+}
+
+.nav-btn img {
+  width: 26px;
+  height: 26px;
+  filter: brightness(0) invert(1); /* ícones brancos */
+}
+
+.nav-btn span {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--white);
+  letter-spacing: 0.03em;
+}
+
+/* Aba ativa — fundo vermelho no ícone */
+.nav-btn.active {
+  background: var(--red);
+}
