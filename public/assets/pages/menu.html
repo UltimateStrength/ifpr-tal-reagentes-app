@@ -1,30 +1,45 @@
-<div class="page" id="page-menu">
-  <p class="page-title">Menu</p>
+<div id="page-menu">
 
-  <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
+  <!-- Abas -->
+  <div id="menu-tabs">
+    <button class="menu-tab active" data-tab="info">App</button>
+    <button class="menu-tab"       data-tab="actions">Opções</button>
+  </div>
 
-    <button class="btn-secondary" id="btn-export">
-      ⬇️ Exportar backup (JSON)
-    </button>
-
-    <div class="form-group" style="margin-bottom:0">
-      <label for="restore-file">Restaurar backup</label>
-      <input type="file" id="restore-file" accept=".json" style="padding:8px;">
+  <!-- Aba: Info -->
+  <div id="tab-info" class="tab-panel">
+    <div id="menu-info-card">
+      <img src="assets/img/icons/logo.png" alt="Logo" id="menu-logo">
+      <p id="menu-appname">Reagentes IFPR</p>
+      <p id="menu-version">Versão 1.0.0</p>
     </div>
-    <button class="btn-primary" id="btn-restore">
-      🔄 Restaurar
-    </button>
+    <img src="assets/img/icons/ifpr.png" alt="IFPR" id="menu-ifpr">
+  </div>
 
-    <hr style="border:none;border-top:1px solid #eee;margin:8px 0;">
+  <!-- Aba: Ações -->
+  <div id="tab-actions" class="tab-panel" hidden>
+    <div id="menu-grid">
 
-    <button class="btn-secondary" id="btn-logout"
-            style="color:var(--red);font-weight:600;">
-      Sair
-    </button>
+      <button class="menu-grid-btn" id="btn-export">
+        <div class="menu-grid-icon">⬇️</div>
+        <span>Exportar backup</span>
+      </button>
 
+      <label class="menu-grid-btn" id="label-restore" for="restore-file">
+        <div class="menu-grid-icon">📂</div>
+        <span>Restaurar backup</span>
+        <input type="file" id="restore-file" accept=".json" hidden>
+      </label>
+
+      <button class="menu-grid-btn" id="btn-logout">
+        <div class="menu-grid-icon logout-icon">↪</div>
+        <span>Sair do app</span>
+      </button>
+
+    </div>
   </div>
 
   <p id="menu-feedback"
-     style="text-align:center;margin-top:16px;font-size:0.85rem;
+     style="text-align:center;padding:16px;font-size:0.85rem;
             color:var(--green);min-height:20px;"></p>
 </div>

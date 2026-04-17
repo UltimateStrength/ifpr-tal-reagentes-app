@@ -10,16 +10,18 @@
   <link rel="icon" href="assets/img/icons/logo.png">
   <link rel="stylesheet" href="assets/css/global.css">
   <link rel="stylesheet" href="assets/css/login.css">
+  <style>
+    [hidden] { display: none !important; }
+  </style>
 </head>
 <body>
 
-  <!-- TELA DE LOGIN -->
   <div id="login-screen">
     <div id="login-card">
       <img src="assets/img/icons/logo.png" alt="Logo" id="login-logo">
       <p id="login-title">Confirme sua identidade:</p>
 
-      <label for="input-user">Usuario:</label>
+      <label for="input-user">Usuário:</label>
       <input type="text" id="input-user" autocomplete="username">
 
       <label for="input-pass">Senha:</label>
@@ -28,18 +30,16 @@
       <button id="btn-login">ENTRAR</button>
       <p id="login-error" hidden>Usuário ou senha incorretos.</p>
 
-      <img src="assets/img/icons/ifpr.png" alt="IFPR" id="ifpr-logo">
-      <a href="assets/pages/about.html" id="link-about">Sobre o app</a>
+      <div id="login-bottom">
+        <img src="assets/img/icons/ifpr.png" alt="IFPR" id="ifpr-logo">
+        <a href="assets/pages/about.html" id="link-about">Sobre o app</a>
+      </div>
     </div>
   </div>
 
-  <!-- APP PRINCIPAL (oculto até autenticar) -->
   <div id="app" hidden>
-
-    <!-- Área de conteúdo das páginas -->
     <main id="page-content"></main>
 
-    <!-- Navbar inferior -->
     <nav id="bottom-nav">
       <button class="nav-btn" data-page="home">
         <img src="assets/img/tabs/home.png" alt="Início">
@@ -62,7 +62,6 @@
         <span>MENU</span>
       </button>
     </nav>
-
   </div>
 
   <script src="assets/js/api.js"></script>
