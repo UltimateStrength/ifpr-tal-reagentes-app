@@ -1,5 +1,5 @@
 window.__page = (() => {
-  let allData = []; // cache local dos dados
+  let allData = [];
 
   // ─── UTILITÁRIOS ──────────────────────────────────────────────
 
@@ -10,15 +10,16 @@ window.__page = (() => {
     return 'Boa noite!';
   }
 
-  // Retorna status de validade baseado em meses até vencer
+  // Agora compara data completa (YYYY-MM-DD)
   function expiryStatus(expiry) {
-    const now   = new Date();
-    const exp   = new Date(expiry + '-01');
-    const diff  = (exp.getFullYear() - now.getFullYear()) * 12
-                + (exp.getMonth()   - now.getMonth());
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const exp = new Date(expiry);
+    exp.setHours(0, 0, 0, 0);
+    const diffDays = (exp - now) / (1000 * 60 * 60 * 24);
 
-    if (diff < 0)  return 'expired';
-    if (diff <= 2) return 'soon';
+    if (diffDays < 0)   return 'expired';
+    if (diffDays <= 60) return 'soon';
     return 'ok';
   }
 
@@ -87,9 +88,10 @@ window.__page = (() => {
 
     list.innerHTML = filtered.map(group => `
       <div class="substance-group">
-        <div class="substance-group-header">
+        <div class="substance-group-header" data-group-name="${group.name}">
           <span class="substance-index">${group.index}</span>
           <span class="substance-name">${group.name}</span>
+          <span class="substance-edit-hint">+ add</span>
         </div>
         ${group.packages.map(pkg => {
           const status = expiryStatus(pkg.expiry);
@@ -109,20 +111,43 @@ window.__page = (() => {
       </div>`
     ).join('');
 
-    // Bind dos botões de remover
+    // Bind remoção
     list.querySelectorAll('.btn-remove').forEach(btn => {
       btn.addEventListener('click', () => confirmRemove(btn.dataset.sub));
     });
 
-    // Search input bind (só na primeira vez que a página carrega)
-    const search = document.getElementById('search-input');
-    if (search && !search.dataset.bound) {
-      search.dataset.bound = '1';
-      search.addEventListener('input', e => renderSubstances(e.target.value));
+    // Bind clique no header do grupo → quick add
+    list.querySelectorAll('.substance-group-header').forEach(header => {
+      header.addEventListener('click', () => {
+        openQuickAdd(header.dataset.groupName);
+      });
+    });
+
+    // Bind botão buscar
+    const btnSearch = document.getElementById('btn-search');
+    const searchInput = document.getElementById('search-input');
+
+    if (btnSearch && !btnSearch.dataset.bound) {
+      btnSearch.dataset.bound = '1';
+      btnSearch.addEventListener('click', () => {
+        renderSubstances(searchInput?.value || '');
+      });
+    }
+
+    if (searchInput && !searchInput.dataset.bound) {
+      searchInput.dataset.bound = '1';
+      // Enter também busca
+      searchInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') renderSubstances(searchInput.value);
+      });
+      // Limpar campo reseta a lista
+      searchInput.addEventListener('input', e => {
+        if (e.target.value === '') renderSubstances('');
+      });
     }
   }
 
-  // Modal de confirmação de remoção
+  // Modal remoção
   function confirmRemove(subIndex) {
     const modal  = document.getElementById('remove-modal');
     const msg    = document.getElementById('modal-remove-msg');
@@ -130,15 +155,12 @@ window.__page = (() => {
     const btnNo  = document.getElementById('modal-cancel');
     if (!modal) return;
 
-    const group = allData.find(g =>
-      g.packages.some(p => p.subIndex === subIndex)
-    );
-    const pkg = group?.packages.find(p => p.subIndex === subIndex);
+    const group = allData.find(g => g.packages.some(p => p.subIndex === subIndex));
+    const pkg   = group?.packages.find(p => p.subIndex === subIndex);
 
     msg.textContent = `${subIndex} — ${group?.name} | Val: ${pkg?.expiry}`;
     modal.hidden = false;
 
-    // Usa clones pra evitar listeners duplicados
     const newOk = btnOk.cloneNode(true);
     const newNo = btnNo.cloneNode(true);
     btnOk.replaceWith(newOk);
@@ -158,6 +180,54 @@ window.__page = (() => {
     newNo.addEventListener('click', () => { modal.hidden = true; });
   }
 
+  // Modal quick add (clicar no grupo)
+  function openQuickAdd(groupName) {
+    const modal   = document.getElementById('quick-add-modal');
+    const title   = document.getElementById('quick-add-title');
+    const btnOk   = document.getElementById('qa-confirm');
+    const btnNo   = document.getElementById('qa-cancel');
+    const qtyInput    = document.getElementById('qa-qty');
+    const expiryInput = document.getElementById('qa-expiry');
+    if (!modal) return;
+
+    title.textContent = `+ ${groupName}`;
+    qtyInput.value    = '';
+    expiryInput.value = '';
+    modal.hidden = false;
+
+    const newOk = btnOk.cloneNode(true);
+    const newNo = btnNo.cloneNode(true);
+    btnOk.replaceWith(newOk);
+    btnNo.replaceWith(newNo);
+
+    newOk.addEventListener('click', async () => {
+      const qty    = parseFloat(qtyInput.value);
+      const expiry = expiryInput.value;
+
+      if (!expiry || isNaN(qty) || qty <= 0) {
+        showToast('Preencha quantidade e validade.');
+        return;
+      }
+
+      newOk.disabled = true;
+      try {
+        allData = await API.post('/substances', {
+          name: groupName,
+          quantity: qty,
+          expiry
+        });
+        modal.hidden = true;
+        renderSubstances(document.getElementById('search-input')?.value || '');
+        showToast('Embalagem adicionada!');
+      } catch (err) {
+        showToast(`Erro: ${err.message}`);
+        newOk.disabled = false;
+      }
+    });
+
+    newNo.addEventListener('click', () => { modal.hidden = true; });
+  }
+
   // ─── ADD ──────────────────────────────────────────────────────
 
   function renderAdd() {
@@ -167,7 +237,7 @@ window.__page = (() => {
     const feedback  = document.getElementById('add-feedback');
     if (!btnAdd) return;
 
-    // Autocomplete com nomes já cadastrados
+    // Autocomplete
     nameInput?.addEventListener('input', () => {
       const term = nameInput.value.toLowerCase().trim();
       if (!term || allData.length === 0) {
@@ -186,8 +256,8 @@ window.__page = (() => {
 
       suggBox.style.display = 'block';
       suggBox.innerHTML = matches.map(g => `
-        <div style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #eee;font-size:0.9rem;"
-             data-name="${g.name}">${g.name}</div>
+        <div style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #eee;
+                    font-size:0.9rem;" data-name="${g.name}">${g.name}</div>
       `).join('');
 
       suggBox.querySelectorAll('[data-name]').forEach(el => {
@@ -198,12 +268,11 @@ window.__page = (() => {
       });
     });
 
-    // Fecha sugestões ao clicar fora
     document.addEventListener('click', e => {
       if (!nameInput?.contains(e.target) && !suggBox?.contains(e.target)) {
         if (suggBox) suggBox.style.display = 'none';
       }
-    }, { once: false });
+    });
 
     btnAdd.addEventListener('click', async () => {
       const name   = document.getElementById('add-name')?.value.trim();
@@ -224,7 +293,6 @@ window.__page = (() => {
         feedback.style.color = 'var(--green)';
         feedback.textContent = `"${name}" adicionado com sucesso!`;
 
-        // Limpa o form
         document.getElementById('add-name').value   = '';
         document.getElementById('add-qty').value    = '';
         document.getElementById('add-expiry').value = '';
@@ -238,35 +306,27 @@ window.__page = (() => {
     });
   }
 
-  // ─── ROUTER INTERNO ───────────────────────────────────────────
+  // ─── CORE ─────────────────────────────────────────────────────
 
   async function fetchData() {
     try {
       allData = await API.get('/substances');
-    } catch {
-      // silencia — o polling vai tentar de novo em 5s
-    }
+    } catch { /* polling tenta de novo */ }
   }
 
   async function init(pageName) {
     await fetchData();
-
-    if (pageName === 'home')        renderHome();
-    if (pageName === 'substances')  renderSubstances();
-    if (pageName === 'add')         renderAdd();
+    if (pageName === 'home')       renderHome();
+    if (pageName === 'substances') renderSubstances();
+    if (pageName === 'add')        renderAdd();
   }
 
-  // Chamado pelo polling do app.js nas páginas home e substances
   async function refresh() {
     await fetchData();
-    const current = document.getElementById('page-home')
-      ? 'home'
-      : document.getElementById('page-substances')
-        ? 'substances'
-        : null;
-
-    if (current === 'home')        renderHome();
-    if (current === 'substances')  renderSubstances(
+    const isHome = !!document.getElementById('page-home');
+    const isSubs = !!document.getElementById('page-substances');
+    if (isHome) renderHome();
+    if (isSubs) renderSubstances(
       document.getElementById('search-input')?.value || ''
     );
   }
