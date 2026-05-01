@@ -21,19 +21,38 @@
       <img src="assets/img/icons/logo.png" alt="Logo" id="login-logo">
       <p id="login-title">Confirme sua identidade:</p>
 
-      <label for="input-user">Usuário:</label>
+      <label for="input-user">usuario:</label>
       <input type="text" id="input-user" autocomplete="username">
 
-      <label for="input-pass">Senha:</label>
+      <label for="input-pass">senha:</label>
       <input type="password" id="input-pass" autocomplete="current-password">
 
-      <button id="btn-login">ENTRAR</button>
+      <button id="btn-login">entrar</button>
       <p id="login-error" hidden>Usuário ou senha incorretos.</p>
 
       <div id="login-bottom">
+        <a href="#" id="link-token">entrar com token</a>
         <img src="assets/img/icons/ifpr.png" alt="IFPR" id="ifpr-logo">
-        <a href="assets/pages/about.html" id="link-about">Sobre o app</a>
+        <a href="assets/pages/about.html" id="link-about">sobre o app</a>
       </div>
+    </div>
+  </div>
+
+  <!-- Input de token (oculto por padrão) -->
+  <div id="token-screen" hidden>
+    <div id="login-card">
+      <img src="assets/img/icons/logo.png" alt="Logo" id="login-logo">
+      <p id="login-title">Digite seu token de acesso:</p>
+
+      <label for="input-token">token:</label>
+      <input type="text" id="input-token" autocomplete="off" placeholder="ex: ABC123">
+
+      <button id="btn-token-login">entrar</button>
+      <p id="token-error" hidden>Token inválido ou expirado.</p>
+
+      <a href="#" id="link-back-login" style="font-size:0.85rem;color:var(--muted);">
+        ← voltar ao login
+      </a>
     </div>
   </div>
 
@@ -49,13 +68,13 @@
         <img src="assets/img/tabs/reagents.png" alt="Substâncias">
         <span>SUBSTANCIAS</span>
       </button>
-      <button class="nav-btn" data-page="add">
-        <img src="assets/img/tabs/edit.png" alt="Adicionar">
-        <span>EDITAR</span>
+      <button class="nav-btn" data-page="edit">
+        <img src="assets/img/tabs/edit.png" alt="Editar">
+        <span>CRIAR</span>
       </button>
       <button class="nav-btn" data-page="import">
         <img src="assets/img/tabs/options.png" alt="Importar">
-        <span>OPÇÕES</span>
+        <span>IMPORTAR</span>
       </button>
       <button class="nav-btn" data-page="menu">
         <img src="assets/img/tabs/menu.png" alt="Menu">
@@ -64,6 +83,7 @@
     </nav>
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/app.js"></script>

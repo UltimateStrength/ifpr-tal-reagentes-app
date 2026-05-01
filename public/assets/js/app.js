@@ -1,33 +1,89 @@
-// Router SPA — carrega páginas HTML dinamicamente no #page-content
 const AppRouter = (() => {
   const loginScreen  = document.getElementById('login-screen');
+  const tokenScreen  = document.getElementById('token-screen');
   const appContainer = document.getElementById('app');
   const pageContent  = document.getElementById('page-content');
   const navBtns      = document.querySelectorAll('.nav-btn');
 
-  let currentPage    = null;
-  let pollingTimer   = null;
-  const PAGE_CACHE   = {};
+  let currentPage  = null;
+  let currentRole  = null;
+  let displayName  = null;
+  const PAGE_CACHE = {};
 
-  // Mapa: nome da página → arquivo HTML + módulo JS
   const PAGES = {
     home:       { html: 'assets/pages/home.html',       js: 'assets/js/substances.js' },
     substances: { html: 'assets/pages/substances.html', js: 'assets/js/substances.js' },
-    add:        { html: 'assets/pages/add.html',        js: 'assets/js/substances.js' },
+    edit:       { html: 'assets/pages/edit.html',       js: 'assets/js/substances.js' },
     import:     { html: 'assets/pages/import.html',     js: 'assets/js/import.js'     },
     menu:       { html: 'assets/pages/menu.html',       js: 'assets/js/backup.js'     }
   };
 
+  // Socket.IO — atualização em tempo real
+  let socket = null;
+
+  function connectSocket() {
+    socket = io();
+
+    socket.on('data-update', ({ data, action, by, detail }) => {
+      // Atualiza cache global de dados
+      window.__substancesData = data;
+
+      // Rerenderiza se estiver numa página que usa dados
+      window.__page?.onDataUpdate?.(data);
+
+      // Toast de atividade
+      const msgs = {
+        add:     `${by} adicionou ${detail?.name || ''}`,
+        remove:  `${by} removeu ${detail?.name || ''}`,
+        import:  `${by} importou ${detail?.count} reagentes`,
+        restore: `${by} restaurou um backup`,
+        revert:  `Sessão de ${by} foi revertida`
+      };
+
+      const msg = msgs[action];
+      if (msg) showToast(msg, 4000);
+    });
+
+    socket.on('disconnect', () => {
+      showToast('Conexão perdida. Reconectando...', 3000);
+    });
+
+    socket.on('reconnect', () => {
+      showToast('Reconectado.', 2000);
+    });
+  }
+
+  function showToast(msg, duration = 2500) {
+    let toast = document.getElementById('app-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'app-toast';
+      toast.className = 'toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  window.showToast = showToast;
+
   async function loadPage(name) {
-    if (currentPage === name) return;
+    if (!PAGES[name]) return;
+
+    // Viewer não acessa edit nem import
+    if (currentRole === 'viewer' && ['edit', 'import'].includes(name)) {
+      showToast('Sem permissão para esta ação.');
+      return;
+    }
+
     currentPage = name;
 
-    // Marca aba ativa
     navBtns.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.page === name);
     });
 
-    // Cache do HTML pra não rebuscar sempre
     if (!PAGE_CACHE[name]) {
       const res = await fetch(PAGES[name].html);
       PAGE_CACHE[name] = await res.text();
@@ -36,53 +92,48 @@ const AppRouter = (() => {
     pageContent.innerHTML = PAGE_CACHE[name];
     pageContent.scrollTop = 0;
 
-    // Chama o init da página se existir
-    // Cada módulo JS expõe window.__page?.init(pageName)
-    window.__page?.init?.(name);
-  }
-
-  function startPolling() {
-    if (pollingTimer) return;
-    pollingTimer = setInterval(() => {
-      // Só faz polling nas páginas que precisam de dados atualizados
-      if (['home', 'substances'].includes(currentPage)) {
-        window.__page?.refresh?.();
-      }
-    }, 5000);
-  }
-
-  function stopPolling() {
-    clearInterval(pollingTimer);
-    pollingTimer = null;
+    window.__page?.init?.(name, { displayName, role: currentRole });
   }
 
   function goLogin() {
-    stopPolling();
+    if (socket) socket.disconnect();
     appContainer.hidden = true;
     loginScreen.hidden  = false;
+    if (tokenScreen) tokenScreen.hidden = true;
     currentPage = null;
   }
 
-  async function init() {
+  async function init(name, role) {
+    displayName = name;
+    currentRole = role;
+
     loginScreen.hidden  = true;
+    if (tokenScreen) tokenScreen.hidden = true;
     appContainer.hidden = false;
 
-    // Cliques na navbar
+    // Esconde abas restritas pra viewer
+    if (role === 'viewer') {
+      navBtns.forEach(btn => {
+        if (['edit', 'import'].includes(btn.dataset.page)) {
+          btn.style.display = 'none';
+        }
+      });
+    }
+
     navBtns.forEach(btn => {
       btn.addEventListener('click', () => loadPage(btn.dataset.page));
     });
 
+    connectSocket();
     await loadPage('home');
-    startPolling();
   }
 
-  // Expõe pra o auth.js usar
-  window.__appRouter = { init, goLogin };
+  window.__appRouter = { init, goLogin, loadPage };
 
-  // Verifica sessão ativa ao carregar (reload de página)
+  // Verifica sessão ativa no reload
   API.get('/auth/check')
-    .then(() => init())
-    .catch(() => {}); // não autenticado — fica no login
+    .then(r => init(r.displayName, r.role))
+    .catch(() => {});
 
   return { init, goLogin, loadPage };
 })();

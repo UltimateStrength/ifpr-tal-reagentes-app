@@ -1,56 +1,54 @@
-const { readData, writeData, normalizeName, sortAndNumber } = require('./dataManager');
+const { getDB } = require('../db/connection');
+const { getAll, normalizeName, sortAndNumber } = require('./dataManager');
 
-/**
- * Faz merge de uma lista de novas embalagens com o estado atual do disco.
- * 
- * Estratégia otimista: lê o estado mais recente na hora do merge,
- * não no momento em que o usuário abriu a tela.
- * 
- * duplicateStrategy: 'sum' | 'replace' | 'ignore'
- *   - sum: soma as quantidades de embalagens com mesmo nome+validade
- *   - replace: substitui a embalagem existente
- *   - ignore: mantém a existente, descarta a nova
- */
-function mergePackages(incoming, duplicateStrategy = 'sum') {
-  // Lê o estado ATUAL do disco (não o que estava na memória do cliente)
-  const current = readData();
+async function mergePackages(incoming, duplicateStrategy = 'sum', userId) {
+  const db = getDB();
 
   for (const item of incoming) {
     const key = normalizeName(item.name);
-    let group = current.find(g => normalizeName(g.name) === key);
+    const existing = await db.collection('substances').findOne({ nameLower: key });
 
-    if (!group) {
-      current.push({
+    if (!existing) {
+      await db.collection('substances').insertOne({
         name: item.name.trim(),
-        packages: [{ quantity: item.quantity, expiry: item.expiry }]
+        nameLower: key,
+        packages: [{ quantity: item.quantity, expiry: item.expiry }],
+        createdAt: new Date(),
+        createdBy: userId
       });
       continue;
     }
 
-    // Verifica duplicata exata (mesmo nome + mesma validade)
-    const dupIdx = group.packages.findIndex(p => p.expiry === item.expiry);
+    const dupIdx = existing.packages.findIndex(p => p.expiry === item.expiry);
 
     if (dupIdx === -1) {
-      // Sem duplicata — insere normalmente
-      group.packages.push({ quantity: item.quantity, expiry: item.expiry });
+      await db.collection('substances').updateOne(
+        { nameLower: key },
+        {
+          $push: { packages: { quantity: item.quantity, expiry: item.expiry } },
+          $set:  { updatedAt: new Date(), updatedBy: userId }
+        }
+      );
       continue;
     }
 
-    // Tem duplicata — aplica estratégia
-    switch (duplicateStrategy) {
-      case 'sum':
-        group.packages[dupIdx].quantity += item.quantity;
-        break;
-      case 'replace':
-        group.packages[dupIdx].quantity = item.quantity;
-        break;
-      case 'ignore':
-        // não faz nada
-        break;
+    // Duplicata encontrada — aplica estratégia
+    if (duplicateStrategy === 'sum') {
+      const newQty = existing.packages[dupIdx].quantity + item.quantity;
+      await db.collection('substances').updateOne(
+        { nameLower: key, 'packages.expiry': item.expiry },
+        { $set: { 'packages.$.quantity': newQty, updatedAt: new Date() } }
+      );
+    } else if (duplicateStrategy === 'replace') {
+      await db.collection('substances').updateOne(
+        { nameLower: key, 'packages.expiry': item.expiry },
+        { $set: { 'packages.$.quantity': item.quantity, updatedAt: new Date() } }
+      );
     }
+    // 'ignore' — não faz nada
   }
 
-  return writeData(current);
+  return getAll();
 }
 
 module.exports = { mergePackages };

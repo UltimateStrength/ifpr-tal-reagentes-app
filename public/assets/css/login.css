@@ -1,9 +1,10 @@
-#login-screen {
+#login-screen,
+#token-screen {
   height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--gray);
+  background: var(--cream);
 }
 
 #login-card {
@@ -25,37 +26,44 @@
 #login-title {
   font-size: 0.95rem;
   color: var(--muted);
-  text-align: center; /* centralizado */
+  text-align: center;
   align-self: center;
 }
 
 #login-card label {
   align-self: flex-start;
   font-size: 0.9rem;
+  font-weight: 600;
   color: var(--text);
 }
 
 #login-card input {
   width: 100%;
   background: #c8c8c8;
-  border-radius: 4px;
-  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  padding: 11px 12px;
   font-size: 1rem;
+  color: var(--text);
 }
 
-#btn-login {
+#btn-login,
+#btn-token-login {
   margin-top: 6px;
   width: 100%;
   background: var(--green);
   color: var(--white);
   font-size: 1rem;
-  font-weight: 600;
-  padding: 12px;
+  font-weight: 700;
+  padding: 13px;
   border-radius: var(--radius);
   letter-spacing: 0.04em;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
 }
 
-#login-error {
+#login-error,
+#token-error {
   color: var(--red);
   font-size: 0.85rem;
 }
@@ -64,17 +72,28 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin-top: 16px;
 }
 
+#link-token {
+  font-size: 0.85rem;
+  color: #3a7bd5;
+  text-decoration: none;
+}
+
 #ifpr-logo {
-  width: 72px;
-  padding-bottom: 10px;
+  width: 68px;
+  opacity: 0.85;
 }
 
 #link-about {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+#link-back-login {
   font-size: 0.85rem;
-  color: var(--green);
-  text-decoration: underline;
+  color: var(--muted);
+  margin-top: 4px;
 }

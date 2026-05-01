@@ -2,7 +2,13 @@ window.__page = (() => {
   let selectedStrategy = 'sum';
 
   function init() {
-    // Seleção de estratégia
+    document.getElementById('imp-btn-importar')
+      ?.addEventListener('click', () => showPanel('panel-importar'));
+    document.getElementById('imp-btn-exportar')
+      ?.addEventListener('click', handleExport);
+    document.getElementById('importar-close')
+      ?.addEventListener('click', () => showMain());
+
     document.querySelectorAll('.strategy-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.strategy-btn')
@@ -12,19 +18,44 @@ window.__page = (() => {
       });
     });
 
-    document.getElementById('btn-import')
+    document.getElementById('imp-nao-tem-modelo')
+      ?.addEventListener('click', downloadTemplate);
+    document.getElementById('imp-tem-modelo')
+      ?.addEventListener('click', () => {
+        document.getElementById('imp-upload-area').hidden = false;
+      });
+    document.getElementById('btn-import-confirm')
       ?.addEventListener('click', handleImport);
   }
 
-  async function handleImport() {
-    const fileInput = document.getElementById('csv-file');
-    const file = fileInput?.files[0];
-    if (!file) {
-      alert('Selecione um arquivo CSV.');
-      return;
-    }
+  function showPanel(id) {
+    document.getElementById('page-import').hidden = true;
+    document.getElementById(id).hidden = false;
+  }
 
-    const btn = document.getElementById('btn-import');
+  function showMain() {
+    document.getElementById('panel-importar').hidden = true;
+    document.getElementById('page-import').hidden = false;
+    document.getElementById('imp-upload-area').hidden = true;
+  }
+
+  function downloadTemplate() {
+    const header = 'nome,quantidade,unidade,validade,chegada\n';
+    const example = 'Álcool Etílico,2,L,2026-12-01,2024-01-15\n';
+    const blob = new Blob([header + example], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'modelo_reagentes.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleImport() {
+    const file = document.getElementById('csv-file')?.files[0];
+    if (!file) { window.showToast('Selecione um arquivo.'); return; }
+
+    const btn = document.getElementById('btn-import-confirm');
     btn.disabled = true;
     btn.textContent = 'Importando...';
 
@@ -34,29 +65,45 @@ window.__page = (() => {
 
     try {
       const result = await API.upload('/import', form);
+      window.__substancesData = result.data;
 
-      const summary = document.getElementById('import-summary');
-      const errBox  = document.getElementById('import-errors');
-      const resDiv  = document.getElementById('import-result');
-
+      const resDiv   = document.getElementById('import-result');
+      const summary  = document.getElementById('import-summary');
+      const errBox   = document.getElementById('import-errors');
       resDiv.style.display = 'block';
-      summary.textContent =
-        `✅ ${result.imported} embalagem(ns) importada(s).` +
-        (result.skipped ? ` ⚠️ ${result.skipped} linha(s) ignorada(s).` : '');
+      summary.textContent  =
+        `✅ ${result.imported} importado(s).` +
+        (result.skipped ? ` ⚠️ ${result.skipped} ignorado(s).` : '');
 
-      if (result.errors?.length > 0) {
+      if (result.errors?.length) {
         errBox.style.display = 'block';
         errBox.innerHTML = result.errors.map(e => `<div>• ${e}</div>`).join('');
       } else {
         errBox.style.display = 'none';
       }
-
-      fileInput.value = '';
+      document.getElementById('csv-file').value = '';
     } catch (err) {
-      alert(`Erro na importação: ${err.message}`);
+      window.showToast(`Erro: ${err.message}`);
     } finally {
       btn.disabled = false;
       btn.textContent = 'Importar';
+    }
+  }
+
+  async function handleExport() {
+    try {
+      const data = await API.get('/backup/export');
+      const blob = new Blob([JSON.stringify(data, null, 2)],
+                            { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `reagentes_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      window.showToast('Exportado com sucesso!');
+    } catch (err) {
+      window.showToast(`Erro: ${err.message}`);
     }
   }
 

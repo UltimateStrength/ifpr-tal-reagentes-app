@@ -1,15 +1,16 @@
-const dm = require('../utils/dataManager');
+const dm      = require('../utils/dataManager');
+const history = require('../utils/history');
 
-function getAll(req, res) {
+async function getAll(req, res) {
   try {
-    const data = dm.getAll();
+    const data = await dm.getAll();
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
-function add(req, res) {
+async function add(req, res) {
   try {
     const { name, quantity, expiry } = req.body;
 
@@ -21,21 +22,70 @@ function add(req, res) {
       return res.status(400).json({ error: 'quantity deve ser número positivo' });
     }
 
-    if (!/^\d{4}-\d{2}/.test(expiry)) {
-      return res.status(400).json({ error: 'expiry deve seguir o formato YYYY-MM' });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiry)) {
+      return res.status(400).json({ error: 'expiry deve seguir o formato YYYY-MM-DD' });
     }
 
-    const updated = dm.addPackage(name, Number(quantity), expiry);
+    const updated = await dm.addPackage(
+      name,
+      Number(quantity),
+      expiry,
+      req.session.userId
+    );
+
+    // Grava no histórico
+    await history.record(
+      req.session.userId,
+      req.session.displayName,
+      history.ACTIONS.ADD,
+      { name, quantity: Number(quantity), expiry },
+      req.session.sessionId,
+      req.session.fingerprint
+    );
+
+    // Notifica todos via Socket.IO
+    req.app.get('io').emit('data-update', {
+      data: updated,
+      action: 'add',
+      by: req.session.displayName,
+      detail: { name, expiry }
+    });
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
-function remove(req, res) {
+async function remove(req, res) {
   try {
     const { sub } = req.params;
-    const updated = dm.removePackage(sub);
+
+    // Salva o estado antes de remover pro histórico
+    const all   = await dm.getAll();
+    const group = all.find(g => g.packages.some(p => p.subIndex === sub));
+    const pkg   = group?.packages.find(p => p.subIndex === sub);
+
+    if (!pkg) return res.status(404).json({ error: `Embalagem ${sub} não encontrada` });
+
+    const updated = await dm.removePackage(sub, req.session.userId);
+
+    await history.record(
+      req.session.userId,
+      req.session.displayName,
+      history.ACTIONS.REMOVE,
+      { name: group.name, quantity: pkg.quantity, expiry: pkg.expiry },
+      req.session.sessionId,
+      req.session.fingerprint
+    );
+
+    req.app.get('io').emit('data-update', {
+      data: updated,
+      action: 'remove',
+      by: req.session.displayName,
+      detail: { name: group.name, expiry: pkg.expiry }
+    });
+
     res.json(updated);
   } catch (err) {
     res.status(404).json({ error: err.message });

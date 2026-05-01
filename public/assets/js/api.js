@@ -1,4 +1,3 @@
-// Wrapper central de fetch — todas as chamadas passam por aqui
 const API = (() => {
   async function request(method, endpoint, body = null) {
     const opts = {
@@ -9,18 +8,15 @@ const API = (() => {
 
     if (body) opts.body = JSON.stringify(body);
 
-    const res = await fetch(`/api${endpoint}`, opts);
+    const res  = await fetch(`/api${endpoint}`, opts);
 
-    // Sessão expirou — volta pro login
     if (res.status === 401) {
       window.__appRouter?.goLogin();
       throw new Error('Sessão expirada');
     }
 
     const data = await res.json();
-
     if (!res.ok) throw new Error(data.error || 'Erro desconhecido');
-
     return data;
   }
 
@@ -28,7 +24,7 @@ const API = (() => {
     const res = await fetch(`/api${endpoint}`, {
       method: 'POST',
       credentials: 'same-origin',
-      body: formData // sem Content-Type — o browser define o boundary do multipart
+      body: formData
     });
 
     if (res.status === 401) {
@@ -42,9 +38,10 @@ const API = (() => {
   }
 
   return {
-    get:    (ep)       => request('GET',    ep),
-    post:   (ep, body) => request('POST',   ep, body),
-    delete: (ep)       => request('DELETE', ep),
-    upload: (ep, form) => upload(ep, form)
+    get:    ep       => request('GET',    ep),
+    post:   (ep, b)  => request('POST',   ep, b),
+    put:    (ep, b)  => request('PUT',    ep, b),
+    delete: ep       => request('DELETE', ep),
+    upload: (ep, f)  => upload(ep, f)
   };
 })();

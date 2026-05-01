@@ -1,13 +1,14 @@
-const fs = require('fs');
-const { parseCSV } = require('../utils/csvParser');
+const fs      = require('fs');
+const { parseCSV }      = require('../utils/csvParser');
 const { mergePackages } = require('../utils/merger');
+const history           = require('../utils/history');
 
-function importCSV(req, res) {
+async function importCSV(req, res) {
   if (!req.file) {
     return res.status(400).json({ error: 'Nenhum arquivo enviado' });
   }
 
-  const strategy = req.body.strategy || 'sum'; // sum | replace | ignore
+  const strategy = req.body.strategy || 'sum';
 
   if (!['sum', 'replace', 'ignore'].includes(strategy)) {
     return res.status(400).json({ error: 'strategy inválida' });
@@ -23,21 +24,29 @@ function importCSV(req, res) {
       });
     }
 
-    const updated = mergePackages(valid, strategy);
+    const updated = await mergePackages(valid, strategy, req.session.userId);
 
-    res.json({
-      imported: valid.length,
-      skipped: errors.length,
-      errors,
-      data: updated
+    await history.record(
+      req.session.userId,
+      req.session.displayName,
+      history.ACTIONS.IMPORT,
+      { count: valid.length, strategy },
+      req.session.sessionId,
+      req.session.fingerprint
+    );
+
+    req.app.get('io').emit('data-update', {
+      data: updated,
+      action: 'import',
+      by: req.session.displayName,
+      detail: { count: valid.length }
     });
+
+    res.json({ imported: valid.length, skipped: errors.length, errors, data: updated });
   } catch (err) {
     res.status(500).json({ error: err.message });
   } finally {
-    // sempre limpa o arquivo temporário
-    if (req.file?.path) {
-      fs.unlink(req.file.path, () => {});
-    }
+    if (req.file?.path) fs.unlink(req.file.path, () => {});
   }
 }
 

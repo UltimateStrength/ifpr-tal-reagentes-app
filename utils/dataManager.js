@@ -1,31 +1,9 @@
-const fs = require('fs');
-const path = require('path');
+const { getDB } = require('../db/connection');
 
-const DATA_PATH = path.join(__dirname, '../data/substances.json');
-
-// Lê o JSON do disco
-function readData() {
-  try {
-    const raw = fs.readFileSync(DATA_PATH, 'utf-8');
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-// Escreve no disco (sempre sobrescreve com a lista reordenada)
-function writeData(data) {
-  const sorted = sortAndNumber(data);
-  fs.writeFileSync(DATA_PATH, JSON.stringify(sorted, null, 2), 'utf-8');
-  return sorted;
-}
-
-// Normaliza o nome pra comparação (evita duplicatas por case/espaço)
 function normalizeName(name) {
   return name.toLowerCase().trim();
 }
 
-// Ordena grupos A-Z e embalagens por validade (asc), depois renumera tudo
 function sortAndNumber(data) {
   const sorted = [...data].sort((a, b) =>
     normalizeName(a.name).localeCompare(normalizeName(b.name), 'pt-BR')
@@ -43,50 +21,90 @@ function sortAndNumber(data) {
   }));
 }
 
-// Adiciona uma embalagem. Se a substância já existe, insere no grupo.
-// Retorna o estado atualizado.
-function addPackage(name, quantity, expiry) {
-  const data = readData();
+async function getAll() {
+  const db = getDB();
+  const raw = await db.collection('substances').find({}).toArray();
+  return sortAndNumber(raw);
+}
+
+async function addPackage(name, quantity, expiry, userId) {
+  const db = getDB();
   const key = normalizeName(name);
-  const existing = data.find(g => normalizeName(g.name) === key);
+
+  const existing = await db.collection('substances').findOne({
+    nameLower: key
+  });
 
   if (existing) {
-    existing.packages.push({ quantity, expiry });
+    await db.collection('substances').updateOne(
+      { nameLower: key },
+      {
+        $push: { packages: { quantity, expiry } },
+        $set:  { updatedAt: new Date(), updatedBy: userId }
+      }
+    );
   } else {
-    data.push({
+    await db.collection('substances').insertOne({
       name: name.trim(),
-      packages: [{ quantity, expiry }]
+      nameLower: key,
+      packages: [{ quantity, expiry }],
+      createdAt: new Date(),
+      createdBy: userId
     });
   }
 
-  return writeData(data);
+  return getAll();
 }
 
-// Remove uma embalagem pelo subIndex (ex: "2.1")
-// Se o grupo ficar vazio, remove o grupo inteiro.
-function removePackage(subIndex) {
-  const data = readData();
+async function removePackage(subIndex, userId) {
+  const db = getDB();
+
+  // Pega todos pra localizar pelo subIndex gerado dinamicamente
+  const all = await getAll();
   const [groupIdx] = subIndex.split('.').map(Number);
 
-  const group = data.find(g => g.index === groupIdx);
+  const group = all.find(g => g.index === groupIdx);
   if (!group) throw new Error(`Substância com índice ${groupIdx} não encontrada`);
 
-  const pkgIdx = group.packages.findIndex(p => p.subIndex === subIndex);
-  if (pkgIdx === -1) throw new Error(`Embalagem ${subIndex} não encontrada`);
+  const pkg = group.packages.find(p => p.subIndex === subIndex);
+  if (!pkg) throw new Error(`Embalagem ${subIndex} não encontrada`);
 
-  group.packages.splice(pkgIdx, 1);
+  if (group.packages.length === 1) {
+    // Última embalagem — remove o documento inteiro
+    await db.collection('substances').deleteOne({ nameLower: normalizeName(group.name) });
+  } else {
+    // Remove só essa embalagem pelo expiry + quantidade (identificador único no array)
+    await db.collection('substances').updateOne(
+      { nameLower: normalizeName(group.name) },
+      {
+        $pull: { packages: { quantity: pkg.quantity, expiry: pkg.expiry } },
+        $set:  { updatedAt: new Date(), updatedBy: userId }
+      }
+    );
+  }
 
-  // Remove o grupo se não sobrou nenhuma embalagem
-  const filtered = group.packages.length === 0
-    ? data.filter(g => g.index !== groupIdx)
-    : data;
-
-  return writeData(filtered);
+  return getAll();
 }
 
-// Retorna todos os dados já ordenados e numerados
-function getAll() {
-  return readData();
+async function replaceAll(data, userId) {
+  const db = getDB();
+  const col = db.collection('substances');
+
+  // Usado pelo restore de backup
+  await col.deleteMany({});
+
+  if (data.length > 0) {
+    const docs = data.map(item => ({
+      name: item.name.trim(),
+      nameLower: normalizeName(item.name),
+      packages: item.packages || [],
+      restoredAt: new Date(),
+      restoredBy: userId
+    }));
+    await col.insertMany(docs);
+  }
+
+  return getAll();
 }
 
-module.exports = { readData, writeData, addPackage, removePackage, getAll, normalizeName, sortAndNumber };
+module.exports = { getAll, addPackage, removePackage, replaceAll, normalizeName, sortAndNumber };
