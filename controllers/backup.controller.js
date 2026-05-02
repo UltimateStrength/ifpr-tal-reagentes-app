@@ -1,5 +1,6 @@
 const dm      = require('../utils/dataManager');
 const history = require('../utils/history');
+const { generateExport } = require('../utils/xlsxParser');
 
 async function exportJSON(req, res) {
   try {
@@ -10,6 +11,23 @@ async function exportJSON(req, res) {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Type', 'application/json');
     res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+async function exportXLSX(req, res) {
+  try {
+    const data     = await dm.getAll();
+    const workbook = await generateExport(data);
+    const buffer   = await workbook.xlsx.writeBuffer();
+    const filename = `reagentes_${new Date().toISOString().slice(0,10)}.xlsx`;
+
+    res.setHeader('Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', buffer.length);
+    res.send(buffer);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -31,19 +49,10 @@ async function restoreJSON(req, res) {
 
     const restored = await dm.replaceAll(incoming, req.session.userId);
 
-    await history.record(
-      req.session.userId,
-      req.session.displayName,
-      history.ACTIONS.RESTORE,
-      { count: incoming.length },
-      req.session.sessionId,
-      req.session.fingerprint
-    );
-
     req.app.get('io').emit('data-update', {
-      data: restored,
+      data:   restored,
       action: 'restore',
-      by: req.session.displayName
+      by:     req.session.displayName
     });
 
     res.json({ ok: true, data: restored });
@@ -52,4 +61,4 @@ async function restoreJSON(req, res) {
   }
 }
 
-module.exports = { exportJSON, restoreJSON };
+module.exports = { exportJSON, exportXLSX, restoreJSON };
