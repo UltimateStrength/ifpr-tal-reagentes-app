@@ -1,0 +1,53 @@
+<div id="page-history">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;
+              padding:16px;background:var(--white);
+              border-bottom:1px solid var(--card-bg);">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="history-back"
+              style="font-size:1.4rem;color:var(--text);line-height:1;
+                     background:none;border:none;cursor:pointer;">←</button>
+      <p style="font-size:1rem;font-weight:700;">Histórico</p>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div style="padding:12px 16px;background:var(--cream);
+              border-bottom:1px solid var(--card-bg);
+              display:flex;gap:8px;overflow-x:auto;">
+    <button class="history-filter active" data-filter="all">Todos</button>
+    <button class="history-filter" data-filter="add">Adições</button>
+    <button class="history-filter" data-filter="remove">Remoções</button>
+    <button class="history-filter" data-filter="import">Imports</button>
+    <button class="history-filter" data-filter="restore">Restauros</button>
+  </div>
+
+  <div id="history-list" style="padding:16px;"></div>
+
+</div>
+
+<!-- Modal detalhes da sessão -->
+<div class="modal-overlay" id="session-modal" hidden>
+  <div class="modal-box">
+    <p class="modal-title" id="session-modal-title">Sessão</p>
+    <div id="session-actions-list"
+         style="max-height:300px;overflow-y:auto;margin-bottom:16px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel"  id="sm-close">Fechar</button>
+      <button class="modal-confirm" id="sm-revert"
+              style="background:var(--red);">Reverter sessão</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.history-filter {
+  padding:6px 14px;border-radius:20px;font-size:0.8rem;font-weight:700;
+  border:2px solid var(--card-bg);background:var(--white);
+  color:var(--muted);cursor:pointer;white-space:nowrap;
+  font-family:inherit;transition:all 0.15s;flex-shrink:0;
+}
+.history-filter.active {
+  border-color:var(--green);color:var(--green);background:#e8f5e9;
+}
+</style>
