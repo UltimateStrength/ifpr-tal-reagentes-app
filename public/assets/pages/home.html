@@ -1,46 +1,53 @@
 <div id="page-home">
 
-  <!-- Header degradê -->
-  <div class="page-header">
-    <h1 id="home-greeting">Carregando...</h1>
+  <div style="background:linear-gradient(to bottom, var(--green-dark), var(--green));
+              padding:170px 20px 56px;text-align:center;">
+    <h1 id="home-greeting"
+        style="font-size:1.6rem;font-weight:800;color:var(--white);">
+      Carregando...
+    </h1>
   </div>
 
-  <!-- Conteúdo -->
-  <div style="padding: 16px 16px 32px;">
+  <div style="padding:0 16px 32px;margin-top:-32px;">
 
-    <!-- Card de indicadores -->
     <div class="card" style="margin-bottom:16px;">
-      <p style="font-size:0.8rem;font-weight:700;color:var(--muted);
-                text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;">
+      <p style="font-size:0.75rem;font-weight:700;color:var(--muted);
+                text-transform:uppercase;letter-spacing:0.06em;
+                margin-bottom:14px;">
         Reagentes
       </p>
       <div style="display:flex;justify-content:space-around;text-align:center;">
         <div>
-          <p id="ind-total" style="font-size:2rem;font-weight:800;color:var(--text);">—</p>
+          <p id="ind-total"
+             style="font-size:2rem;font-weight:800;color:var(--text);">—</p>
           <p style="font-size:0.72rem;font-weight:600;color:var(--muted);">TOTAL</p>
         </div>
         <div style="width:1px;background:var(--card-bg);"></div>
         <div>
-          <p id="ind-soon" style="font-size:2rem;font-weight:800;color:#e07b00;">—</p>
+          <p id="ind-soon"
+             style="font-size:2rem;font-weight:800;color:#e07b00;">—</p>
           <p style="font-size:0.72rem;font-weight:600;color:var(--muted);">P/VENC</p>
         </div>
         <div style="width:1px;background:var(--card-bg);"></div>
         <div>
-          <p id="ind-expired" style="font-size:2rem;font-weight:800;color:var(--red);">—</p>
+          <p id="ind-expired"
+             style="font-size:2rem;font-weight:800;color:var(--red);">—</p>
           <p style="font-size:0.72rem;font-weight:600;color:var(--muted);">VENC.</p>
         </div>
       </div>
     </div>
 
-    <!-- Card últimos adicionados -->
     <div class="card">
-      <p style="font-size:0.8rem;font-weight:700;color:var(--muted);
-                text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;
-                border-bottom:2px solid var(--card-bg);padding-bottom:8px;">
+      <p style="font-size:0.75rem;font-weight:700;color:var(--muted);
+                text-transform:uppercase;letter-spacing:0.06em;
+                margin-bottom:12px;border-bottom:2px solid var(--card-bg);
+                padding-bottom:8px;">
         Últimos adicionados
       </p>
       <div id="recent-list">
-        <div class="empty-state" style="padding:20px;">Nenhum reagente ainda.</div>
+        <div class="empty-state" style="padding:20px;">
+          Nenhum reagente ainda.
+        </div>
       </div>
     </div>
 

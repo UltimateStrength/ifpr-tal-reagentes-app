@@ -44,7 +44,7 @@ app.set('io', io);
 
 app.use('/api/auth',       authRoutes);
 app.use('/api/substances', substancesRoutes);
-app.use('/api/import',     importRoutes);
+app.use('/api/import/',     importRoutes);
 app.use('/api/backup',     backupRoutes);
 app.use('/api/users',      usersRoutes);
 app.use('/api/history',    historyRoutes);

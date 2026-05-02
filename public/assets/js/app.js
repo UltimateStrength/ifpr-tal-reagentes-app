@@ -11,46 +11,39 @@ const AppRouter = (() => {
   const PAGE_CACHE = {};
 
   const PAGES = {
-    home:       { html: 'assets/pages/home.html',       js: 'assets/js/substances.js' },
-    substances: { html: 'assets/pages/substances.html', js: 'assets/js/substances.js' },
-    edit:       { html: 'assets/pages/edit.html',       js: 'assets/js/substances.js' },
-    import:     { html: 'assets/pages/import.html',     js: 'assets/js/import.js'     },
-    menu:       { html: 'assets/pages/menu.html',       js: 'assets/js/backup.js'     }
+    home:       { html: 'assets/pages/home.html',       module: 'assets/js/substances.js' },
+    substances: { html: 'assets/pages/substances.html', module: 'assets/js/substances.js' },
+    edit:       { html: 'assets/pages/edit.html',       module: 'assets/js/substances.js' },
+    import:     { html: 'assets/pages/import.html',     module: 'assets/js/import.js'     },
+    menu:       { html: 'assets/pages/menu.html',       module: 'assets/js/backup.js'     },
+    about:      { html: 'assets/pages/about-spa.html',  module: 'assets/js/about.js'      },
+    users:      { html: 'assets/pages/users.html',      module: 'assets/js/users.js'      },
+    tokens:     { html: 'assets/pages/tokens.html',     module: 'assets/js/tokens.js'     }
   };
 
-  // Socket.IO — atualização em tempo real
   let socket = null;
 
   function connectSocket() {
     socket = io();
 
     socket.on('data-update', ({ data, action, by, detail }) => {
-      // Atualiza cache global de dados
       window.__substancesData = data;
-
-      // Rerenderiza se estiver numa página que usa dados
       window.__page?.onDataUpdate?.(data);
 
-      // Toast de atividade
       const msgs = {
         add:     `${by} adicionou ${detail?.name || ''}`,
         remove:  `${by} removeu ${detail?.name || ''}`,
         import:  `${by} importou ${detail?.count} reagentes`,
         restore: `${by} restaurou um backup`,
-        revert:  `Sessão de ${by} foi revertida`
+        revert:  `Sessão revertida por admin`
       };
 
       const msg = msgs[action];
       if (msg) showToast(msg, 4000);
     });
 
-    socket.on('disconnect', () => {
-      showToast('Conexão perdida. Reconectando...', 3000);
-    });
-
-    socket.on('reconnect', () => {
-      showToast('Reconectado.', 2000);
-    });
+    socket.on('disconnect', () => showToast('Conexão perdida...', 3000));
+    socket.on('reconnect',  () => showToast('Reconectado.', 2000));
   }
 
   function showToast(msg, duration = 2500) {
@@ -69,31 +62,48 @@ const AppRouter = (() => {
 
   window.showToast = showToast;
 
-  async function loadPage(name) {
-    if (!PAGES[name]) return;
+  function loadModule(src) {
+    return new Promise((resolve) => {
+      const existing = document.querySelector(`script[data-page-module="${src}"]`);
+      if (existing) existing.remove();
 
-    // Viewer não acessa edit nem import
-    if (currentRole === 'viewer' && ['edit', 'import'].includes(name)) {
-      showToast('Sem permissão para esta ação.');
-      return;
-    }
+      window.__page = null;
 
-    currentPage = name;
-
-    navBtns.forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.page === name);
+      const script = document.createElement('script');
+      script.src = `${src}?v=${Date.now()}`;
+      script.dataset.pageModule = src;
+      script.onload = resolve;
+      document.body.appendChild(script);
     });
-
-    if (!PAGE_CACHE[name]) {
-      const res = await fetch(PAGES[name].html);
-      PAGE_CACHE[name] = await res.text();
-    }
-
-    pageContent.innerHTML = PAGE_CACHE[name];
-    pageContent.scrollTop = 0;
-
-    window.__page?.init?.(name, { displayName, role: currentRole });
   }
+
+async function loadPage(name) {
+  if (!PAGES[name]) return;
+
+  if (currentRole === 'viewer' && ['edit', 'import'].includes(name)) {
+    showToast('Sem permissão para esta ação.');
+    return;
+  }
+
+  currentPage = name;
+
+  navBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === name);
+  });
+
+  // Não cacheia substances pra sempre pegar HTML atualizado
+  if (!PAGE_CACHE[name] || name === 'substances') {
+    const res = await fetch(PAGES[name].html + `?v=${Date.now()}`);
+    PAGE_CACHE[name] = await res.text();
+  }
+
+  pageContent.innerHTML = PAGE_CACHE[name];
+  pageContent.scrollTop = 0;
+
+  await loadModule(PAGES[name].module);
+
+  window.__page?.init?.(name, { displayName, role: currentRole });
+}
 
   function goLogin() {
     if (socket) socket.disconnect();
@@ -101,6 +111,7 @@ const AppRouter = (() => {
     loginScreen.hidden  = false;
     if (tokenScreen) tokenScreen.hidden = true;
     currentPage = null;
+    window.__page = null;
   }
 
   async function init(name, role) {
@@ -111,7 +122,6 @@ const AppRouter = (() => {
     if (tokenScreen) tokenScreen.hidden = true;
     appContainer.hidden = false;
 
-    // Esconde abas restritas pra viewer
     if (role === 'viewer') {
       navBtns.forEach(btn => {
         if (['edit', 'import'].includes(btn.dataset.page)) {
@@ -130,7 +140,6 @@ const AppRouter = (() => {
 
   window.__appRouter = { init, goLogin, loadPage };
 
-  // Verifica sessão ativa no reload
   API.get('/auth/check')
     .then(r => init(r.displayName, r.role))
     .catch(() => {});
