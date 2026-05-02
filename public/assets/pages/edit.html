@@ -1,115 +1,142 @@
-<div id="page-edit">
+<div id="edit-container">
 
-  <div class="page-header" style="background:linear-gradient(160deg,#1a4a22,var(--green-dark));">
-    <h1>O que você deseja fazer?</h1>
-  </div>
+  <div id="page-edit">
 
-  <div style="padding:24px 16px;display:flex;flex-direction:column;gap:12px;">
-    <button class="btn-primary" id="edit-btn-criar">criar</button>
-    <button class="btn-primary" id="edit-btn-editar">editar</button>
-    <button class="btn-danger"  id="edit-btn-deletar">deletar</button>
-  </div>
-
-</div>
-
-<!-- Painel criar (slide-in) -->
-<div id="panel-criar" hidden>
-  <div style="display:flex;align-items:center;gap:12px;
-              padding:16px;background:var(--white);
-              border-bottom:1px solid var(--card-bg);">
-    <button id="criar-close"
-            style="font-size:1.4rem;color:var(--text);line-height:1;">✕</button>
-    <p style="font-size:1rem;font-weight:700;">Novo reagente</p>
-  </div>
-
-  <div style="padding:20px 16px 32px;">
-
-    <div class="form-group">
-      <label for="c-name">Nome do reagente</label>
-      <input type="text" id="c-name" placeholder="ex: Álcool Etílico" autocomplete="off">
-      <div id="c-suggestions" style="display:none;background:var(--white);
-           border:1px solid #ddd;border-radius:var(--radius-sm);overflow:hidden;
-           margin-top:2px;box-shadow:0 2px 8px rgba(0,0,0,0.1);"></div>
+    <!-- Degradê com título no fim -->
+    <div style="background:linear-gradient(to bottom, var(--green-dark), var(--green));
+                padding:170px 20px 32px;text-align:center;">
+      <p style="font-size:1.6rem;font-weight:800;color:var(--white);
+                line-height:1.3;">
+        O que você<br>deseja fazer?
+      </p>
     </div>
 
-    <div style="display:flex;gap:10px;">
-      <div class="form-group" style="flex:1;">
-        <label for="c-qty">Quantidade</label>
-        <input type="number" id="c-qty" min="0.01" step="0.01" placeholder="1">
+<div style="display:flex;flex-direction:column;
+            align-items:center;justify-content:center;
+            gap:18px;
+            min-height:calc(100dvh - 420px);
+            padding:0 32px;">
+
+  <button class="btn-primary" id="edit-btn-criar"
+          style="width:80%;padding:18px;font-size:1.1rem;
+                 background:var(--white);color:var(--green);
+                 box-shadow:0 3px 10px rgba(0,0,0,0.12);">
+    criar
+  </button>
+
+  <button class="btn-primary" id="edit-btn-editar"
+          style="width:80%;padding:18px;font-size:1.1rem;
+                 transform:translateX(20px);
+                 background:var(--white);color:var(--green);
+                 box-shadow:0 3px 10px rgba(0,0,0,0.12);">
+    editar
+  </button>
+
+  <button class="btn-danger" id="edit-btn-deletar"
+          style="width:80%;padding:18px;font-size:1.1rem;
+                 box-shadow:0 3px 10px rgba(0,0,0,0.12);">
+    deletar
+  </button>
+
+</div>
+  </div>
+
+  <!-- Painel criar -->
+  <div id="panel-criar" hidden>
+    <div style="display:flex;align-items:center;gap:12px;padding:16px;
+                background:var(--white);border-bottom:1px solid var(--card-bg);">
+      <button id="criar-close"
+              style="font-size:1.4rem;color:var(--text);line-height:1;
+                     background:none;border:none;cursor:pointer;">✕</button>
+      <p style="font-size:1rem;font-weight:700;">Novo reagente</p>
+    </div>
+    <div style="padding:20px 16px 32px;">
+      <div class="form-group">
+        <label for="c-name">Nome do reagente</label>
+        <input type="text" id="c-name"
+               placeholder="ex: Álcool Etílico" autocomplete="off">
+        <div id="c-suggestions"
+             style="display:none;background:var(--white);
+                    border:1px solid #ddd;border-radius:var(--radius-sm);
+                    overflow:hidden;margin-top:2px;
+                    box-shadow:0 2px 8px rgba(0,0,0,0.1);"></div>
       </div>
-      <div class="form-group" style="flex:1;">
-        <label for="c-unit">Unidade</label>
-        <select id="c-unit">
-          <option value="un">un</option>
-          <option value="L">L</option>
-          <option value="mL">mL</option>
-          <option value="kg">kg</option>
-          <option value="g">g</option>
-          <option value="mg">mg</option>
-        </select>
+      <div style="display:flex;gap:10px;">
+        <div class="form-group" style="flex:2;">
+          <label for="c-qty">Quantidade</label>
+          <input type="number" id="c-qty" min="0.01" step="0.01" placeholder="1">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label for="c-unit">Unidade</label>
+          <select id="c-unit">
+            <option value="un">un</option>
+            <option value="L">L</option>
+            <option value="mL">mL</option>
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+            <option value="mg">mg</option>
+          </select>
+        </div>
       </div>
+      <div class="form-group">
+        <label for="c-expiry">Data de validade</label>
+        <input type="date" id="c-expiry">
+      </div>
+      <div class="form-group">
+        <label for="c-arrival">Data de chegada</label>
+        <input type="date" id="c-arrival">
+      </div>
+      <button class="btn-primary" id="btn-criar-confirmar">criar</button>
+      <p id="criar-feedback"
+         style="text-align:center;margin-top:10px;
+                font-size:0.85rem;min-height:18px;"></p>
     </div>
-
-    <div class="form-group">
-      <label for="c-expiry">Data de validade</label>
-      <input type="date" id="c-expiry">
-    </div>
-
-    <div class="form-group">
-      <label for="c-arrival">Data de chegada</label>
-      <input type="date" id="c-arrival">
-    </div>
-
-    <button class="btn-primary" id="btn-criar-confirmar">criar</button>
-    <p id="criar-feedback"
-       style="text-align:center;margin-top:10px;font-size:0.85rem;min-height:18px;"></p>
-  </div>
-</div>
-
-<!-- Painel editar -->
-<div id="panel-editar" hidden>
-  <div style="display:flex;align-items:center;gap:12px;
-              padding:16px;background:var(--white);
-              border-bottom:1px solid var(--card-bg);">
-    <button id="editar-close"
-            style="font-size:1.4rem;color:var(--text);line-height:1;">✕</button>
-    <p style="font-size:1rem;font-weight:700;">Editar reagente</p>
   </div>
 
-  <div style="padding:16px;">
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <input type="text" id="edit-search"
-             placeholder="buscar substância..."
-             style="flex:1;background:var(--card-bg);padding:11px 12px;
-                    border-radius:var(--radius-sm);font-size:0.95rem;
-                    border:2px solid transparent;">
-      <button class="btn-primary" id="edit-search-btn"
-              style="width:auto;padding:0 16px;">buscar</button>
+  <!-- Painel editar -->
+  <div id="panel-editar" hidden>
+    <div style="display:flex;align-items:center;gap:12px;padding:16px;
+                background:var(--white);border-bottom:1px solid var(--card-bg);">
+      <button id="editar-close"
+              style="font-size:1.4rem;color:var(--text);line-height:1;
+                     background:none;border:none;cursor:pointer;">✕</button>
+      <p style="font-size:1rem;font-weight:700;">Editar reagente</p>
     </div>
-    <div id="edit-results"></div>
-  </div>
-</div>
-
-<!-- Painel deletar -->
-<div id="panel-deletar" hidden>
-  <div style="display:flex;align-items:center;gap:12px;
-              padding:16px;background:var(--white);
-              border-bottom:1px solid var(--card-bg);">
-    <button id="deletar-close"
-            style="font-size:1.4rem;color:var(--text);line-height:1;">✕</button>
-    <p style="font-size:1rem;font-weight:700;">Deletar reagente</p>
-  </div>
-
-  <div style="padding:16px;">
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <input type="text" id="delete-search"
-             placeholder="buscar substância..."
-             style="flex:1;background:var(--card-bg);padding:11px 12px;
-                    border-radius:var(--radius-sm);font-size:0.95rem;
-                    border:2px solid transparent;">
-      <button class="btn-primary" id="delete-search-btn"
-              style="width:auto;padding:0 16px;">buscar</button>
+    <div style="padding:16px;">
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <input type="text" id="edit-search"
+               placeholder="buscar substância..."
+               style="flex:1;background:var(--card-bg);padding:11px 12px;
+                      border-radius:var(--radius-sm);font-size:0.95rem;
+                      border:2px solid transparent;">
+        <button class="btn-primary" id="edit-search-btn"
+                style="width:auto;padding:0 16px;">buscar</button>
+      </div>
+      <div id="edit-results"></div>
     </div>
-    <div id="delete-results"></div>
   </div>
+
+  <!-- Painel deletar -->
+  <div id="panel-deletar" hidden>
+    <div style="display:flex;align-items:center;gap:12px;padding:16px;
+                background:var(--white);border-bottom:1px solid var(--card-bg);">
+      <button id="deletar-close"
+              style="font-size:1.4rem;color:var(--text);line-height:1;
+                     background:none;border:none;cursor:pointer;">✕</button>
+      <p style="font-size:1rem;font-weight:700;">Deletar reagente</p>
+    </div>
+    <div style="padding:16px;">
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <input type="text" id="delete-search"
+               placeholder="buscar substância..."
+               style="flex:1;background:var(--card-bg);padding:11px 12px;
+                      border-radius:var(--radius-sm);font-size:0.95rem;
+                      border:2px solid transparent;">
+        <button class="btn-primary" id="delete-search-btn"
+                style="width:auto;padding:0 16px;">buscar</button>
+      </div>
+      <div id="delete-results"></div>
+    </div>
+  </div>
+
 </div>

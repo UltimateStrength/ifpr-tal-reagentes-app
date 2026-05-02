@@ -1,18 +1,13 @@
 <div id="page-substances">
-
-  <!-- Barra de busca no topo -->
   <div style="padding:16px 16px 8px;background:var(--cream);
               position:sticky;top:0;z-index:10;">
     <div style="display:flex;gap:8px;">
-      <input
-        type="text"
-        id="search-input"
-        placeholder="digite o nome da substância"
-        style="flex:1;background:var(--white);padding:12px 14px;
-               border-radius:var(--radius);font-size:0.95rem;
-               box-shadow:0 1px 4px rgba(0,0,0,0.08);
-               border:2px solid transparent;"
-      >
+      <input type="text" id="search-input"
+             placeholder="digite o nome da substância"
+             style="flex:1;background:var(--white);padding:12px 14px;
+                    border-radius:var(--radius);font-size:0.95rem;
+                    box-shadow:0 1px 4px rgba(0,0,0,0.08);
+                    border:2px solid transparent;">
       <button id="btn-search" class="btn-primary"
               style="width:auto;padding:0 20px;border-radius:var(--radius);">
         buscar
@@ -20,16 +15,14 @@
     </div>
   </div>
 
-  <!-- Resultados -->
   <div id="substances-list" style="padding:8px 16px 32px;"></div>
-
 </div>
 
 <!-- Modal remoção -->
 <div class="modal-overlay" id="remove-modal" hidden>
   <div class="modal-box">
     <p class="modal-title">Remover embalagem?</p>
-    <p class="modal-message" id="modal-remove-msg"></p>
+    <div id="modal-remove-msg" style="margin-bottom:16px;"></div>
     <div class="modal-actions">
       <button class="modal-cancel"  id="modal-cancel">Cancelar</button>
       <button class="modal-confirm" id="modal-confirm">Remover</button>
@@ -42,8 +35,9 @@
   <div class="modal-box">
     <p class="modal-title" id="options-modal-title">Opções</p>
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
-      <button class="btn-primary" id="opt-edit">✏️ Editar / adicionar embalagem</button>
-      <button class="btn-danger"  id="opt-delete">🗑️ Deletar embalagem</button>
+      <button class="btn-primary"   id="opt-edit">➕ Adicionar embalagem</button>
+      <button class="btn-secondary" id="opt-edit-pkg">✏️ Editar embalagem existente</button>
+      <button class="btn-danger"    id="opt-delete">🗑️ Deletar embalagem</button>
       <button class="btn-secondary" id="opt-cancel">Cancelar</button>
     </div>
   </div>
@@ -54,19 +48,86 @@
   <div class="modal-box">
     <p class="modal-title" id="quick-add-title">Adicionar embalagem</p>
 
+    <!-- Quantidade + Unidade lado a lado -->
+    <div style="display:flex;gap:10px;">
+      <div class="form-group" style="flex:2;">
+        <label for="qa-qty">Quantidade</label>
+        <input type="number" id="qa-qty" min="0.01" step="0.01" placeholder="ex: 2">
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label for="qa-unit">Unidade</label>
+        <select id="qa-unit">
+          <option value="un">un</option>
+          <option value="L">L</option>
+          <option value="mL">mL</option>
+          <option value="kg">kg</option>
+          <option value="g">g</option>
+          <option value="mg">mg</option>
+        </select>
+      </div>
+    </div>
+
     <div class="form-group">
-      <label for="qa-qty">Quantidade</label>
-      <input type="number" id="qa-qty" min="0.01" step="0.01" placeholder="ex: 2">
+      <label for="qa-expiry">Validade</label>
+      <input type="date" id="qa-expiry">
     </div>
 
     <div class="form-group" style="margin-bottom:0">
-      <label for="qa-expiry">Validade</label>
-      <input type="date" id="qa-expiry">
+      <label for="qa-arrival">Data de chegada</label>
+      <input type="date" id="qa-arrival">
     </div>
 
     <div class="modal-actions" style="margin-top:20px;">
       <button class="modal-cancel" id="qa-cancel">Cancelar</button>
       <button class="modal-ok"     id="qa-confirm">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar embalagem existente -->
+<div class="modal-overlay" id="edit-pkg-modal" hidden>
+  <div class="modal-box">
+    <p class="modal-title" id="edit-pkg-title">Editar embalagem</p>
+
+    <div id="edit-pkg-list"
+         style="margin-bottom:16px;max-height:180px;overflow-y:auto;"></div>
+
+    <div id="edit-pkg-form" hidden>
+
+      <!-- Quantidade + Unidade lado a lado -->
+      <div style="display:flex;gap:10px;">
+        <div class="form-group" style="flex:2;">
+          <label for="epf-qty">Quantidade</label>
+          <input type="number" id="epf-qty" min="0.01" step="0.01">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label for="epf-unit">Unidade</label>
+          <select id="epf-unit">
+            <option value="un">un</option>
+            <option value="L">L</option>
+            <option value="mL">mL</option>
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+            <option value="mg">mg</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="epf-expiry">Validade</label>
+        <input type="date" id="epf-expiry">
+      </div>
+
+      <div class="form-group" style="margin-bottom:0">
+        <label for="epf-arrival">Data de chegada</label>
+        <input type="date" id="epf-arrival">
+      </div>
+
+    </div>
+
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="modal-cancel" id="epf-cancel">Cancelar</button>
+      <button class="modal-ok"     id="epf-confirm" hidden>Salvar</button>
     </div>
   </div>
 </div>

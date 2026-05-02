@@ -1,0 +1,75 @@
+<div id="page-users">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;
+              padding:16px;background:var(--white);
+              border-bottom:1px solid var(--card-bg);">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="users-back"
+              style="font-size:1.4rem;color:var(--text);line-height:1;
+                     background:none;border:none;cursor:pointer;">←</button>
+      <p style="font-size:1rem;font-weight:700;">Usuários</p>
+    </div>
+    <button id="btn-new-user" class="btn-primary"
+            style="width:auto;padding:8px 16px;font-size:0.85rem;">
+      + novo
+    </button>
+  </div>
+
+  <div id="users-list" style="padding:16px;"></div>
+
+</div>
+
+<!-- Modal criar/editar usuário -->
+<div class="modal-overlay" id="user-modal" hidden>
+  <div class="modal-box">
+    <p class="modal-title" id="user-modal-title">Novo usuário</p>
+
+    <div class="form-group">
+      <label for="u-displayname">Nome completo</label>
+      <input type="text" id="u-displayname" placeholder="ex: João Silva">
+    </div>
+
+    <div class="form-group">
+      <label for="u-username">Usuário</label>
+      <input type="text" id="u-username" placeholder="ex: joao.silva"
+             autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label for="u-email">Email</label>
+      <input type="email" id="u-email" placeholder="ex: joao@ifpr.edu.br">
+    </div>
+
+    <div class="form-group">
+      <label for="u-password">Senha</label>
+      <input type="password" id="u-password" placeholder="mínimo 6 caracteres"
+             autocomplete="new-password">
+    </div>
+
+    <div class="form-group" style="margin-bottom:0">
+      <label for="u-role">Cargo</label>
+      <select id="u-role">
+        <option value="staff">Suporte</option>
+        <option value="admin">Administrador</option>
+        <option value="viewer">Visualizador</option>
+      </select>
+    </div>
+
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="modal-cancel"  id="u-cancel">Cancelar</button>
+      <button class="modal-ok"      id="u-confirm">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar exclusão -->
+<div class="modal-overlay" id="delete-user-modal" hidden>
+  <div class="modal-box">
+    <p class="modal-title">Remover usuário?</p>
+    <p class="modal-message" id="delete-user-msg"></p>
+    <div class="modal-actions">
+      <button class="modal-cancel"  id="du-cancel">Cancelar</button>
+      <button class="modal-confirm" id="du-confirm">Remover</button>
+    </div>
+  </div>
+</div>

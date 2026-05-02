@@ -1,83 +1,91 @@
-<div id="page-import">
+<div id="import-container">
 
-  <div class="page-header" style="background:linear-gradient(160deg,#1a4a22,var(--green-dark));">
-    <h1>Importar / Exportar</h1>
-  </div>
-
-  <div style="padding:24px 16px;display:flex;flex-direction:column;gap:12px;">
-    <button class="btn-primary" id="imp-btn-importar">⬆️ importar planilha</button>
-    <button class="btn-secondary" id="imp-btn-exportar">⬇️ exportar planilha</button>
-  </div>
-
-</div>
-
-<!-- Painel importar -->
-<div id="panel-importar" hidden>
-  <div style="display:flex;align-items:center;gap:12px;
-              padding:16px;background:var(--white);
-              border-bottom:1px solid var(--card-bg);">
-    <button id="importar-close"
-            style="font-size:1.4rem;color:var(--text);line-height:1;">✕</button>
-    <p style="font-size:1rem;font-weight:700;">Importar planilha</p>
-  </div>
-
-  <div style="padding:20px 16px 32px;">
-
-    <div class="card" style="margin-bottom:16px;">
-      <p style="font-size:0.9rem;font-weight:700;margin-bottom:8px;">
-        Você já tem o modelo padrão?
-      </p>
-      <div style="display:flex;gap:10px;">
-        <button class="btn-primary"   id="imp-tem-modelo"
-                style="font-size:0.9rem;padding:11px;">
-          ✅ Sim, tenho
-        </button>
-        <button class="btn-secondary" id="imp-nao-tem-modelo"
-                style="font-size:0.9rem;padding:11px;">
-          ⬇️ Não, baixar modelo
-        </button>
-      </div>
+  <div id="page-import">
+    <div style="background:linear-gradient(to bottom, var(--green-dark), var(--green));
+                padding:170px 20px 56px;text-align:center;">
+      <h1 style="font-size:1.3rem;font-weight:800;color:var(--white);">
+        Importar / Exportar
+      </h1>
     </div>
 
-    <!-- Aparece só após clicar em "Sim, tenho" -->
-    <div id="imp-upload-area" hidden>
-      <div class="form-group">
-        <label>Ao encontrar duplicatas:</label>
-        <div style="display:flex;gap:8px;margin-top:4px;">
-          <button class="strategy-btn selected" data-strategy="sum">Somar</button>
-          <button class="strategy-btn"          data-strategy="replace">Substituir</button>
-          <button class="strategy-btn"          data-strategy="ignore">Ignorar</button>
+    <div style="padding:0 16px 32px;margin-top:-36px;
+                display:flex;flex-direction:column;gap:12px;">
+      <button class="btn-primary"   id="imp-btn-importar">
+        ⬆️ importar planilha
+      </button>
+      <button class="btn-secondary" id="imp-btn-exportar">
+        ⬇️ exportar dados
+      </button>
+    </div>
+  </div>
+
+  <!-- Painel importar -->
+  <div id="panel-importar" hidden>
+    <div style="display:flex;align-items:center;gap:12px;padding:16px;
+                background:var(--white);border-bottom:1px solid var(--card-bg);">
+      <button id="importar-close"
+              style="font-size:1.4rem;color:var(--text);line-height:1;
+                     background:none;border:none;cursor:pointer;">✕</button>
+      <p style="font-size:1rem;font-weight:700;">Importar planilha</p>
+    </div>
+    <div style="padding:20px 16px 32px;">
+
+      <div class="card" style="margin-bottom:16px;">
+        <p style="font-size:0.9rem;font-weight:700;margin-bottom:12px;">
+          Você já tem o modelo padrão?
+        </p>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-primary"   id="imp-tem-modelo"
+                  style="font-size:0.9rem;padding:11px;">
+            ✅ Sim, tenho
+          </button>
+          <button class="btn-secondary" id="imp-nao-tem-modelo"
+                  style="font-size:0.9rem;padding:11px;">
+            ⬇️ Baixar modelo
+          </button>
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="csv-file">Arquivo CSV ou Excel</label>
-        <input type="file" id="csv-file" accept=".csv,.xlsx,.xls"
-               style="padding:8px;background:var(--card-bg);border-radius:var(--radius-sm);">
+      <div id="imp-upload-area" hidden>
+        <div class="form-group">
+          <label>Ao encontrar duplicatas:</label>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button class="strategy-btn selected" data-strategy="sum">Somar</button>
+            <button class="strategy-btn" data-strategy="replace">Substituir</button>
+            <button class="strategy-btn" data-strategy="ignore">Ignorar</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="csv-file">Arquivo (.xlsx ou .csv)</label>
+          <input type="file" id="csv-file" accept=".xlsx,.csv,.xls"
+                 style="padding:8px;background:var(--card-bg);
+                        border-radius:var(--radius-sm);">
+        </div>
+
+        <button class="btn-primary" id="btn-import-confirm">Importar</button>
+
+        <div id="import-result" style="margin-top:16px;display:none;">
+          <p id="import-summary"
+             style="font-size:0.9rem;margin-bottom:8px;font-weight:600;"></p>
+          <div id="import-errors"
+               style="background:#fff3cd;border-radius:8px;padding:12px;
+                      font-size:0.8rem;display:none;"></div>
+        </div>
       </div>
 
-      <button class="btn-primary" id="btn-import-confirm">Importar</button>
-
-      <div id="import-result" style="margin-top:16px;display:none;">
-        <p id="import-summary"
-           style="font-size:0.9rem;margin-bottom:8px;font-weight:600;"></p>
-        <div id="import-errors"
-             style="background:#fff3cd;border-radius:8px;padding:12px;
-                    font-size:0.8rem;display:none;"></div>
-      </div>
     </div>
-
   </div>
+
 </div>
 
-<!-- Estratégia btn CSS inline pra não depender de arquivo externo aqui -->
 <style>
 .strategy-btn {
   flex:1;padding:10px 6px;border-radius:8px;
   border:2px solid var(--card-bg);font-size:0.8rem;
   font-weight:700;color:var(--muted);text-align:center;
-  cursor:pointer;background:var(--white);transition:all 0.15s;
-  font-family:inherit;
+  cursor:pointer;background:var(--white);
+  transition:all 0.15s;font-family:inherit;
 }
 .strategy-btn.selected {
   border-color:var(--green);color:var(--green);background:#e8f5e9;
