@@ -18,7 +18,8 @@ const AppRouter = (() => {
     menu:       { html: 'assets/pages/menu.html',       module: 'assets/js/backup.js'     },
     about:      { html: 'assets/pages/about-spa.html',  module: 'assets/js/about.js'      },
     users:      { html: 'assets/pages/users.html',      module: 'assets/js/users.js'      },
-    tokens:     { html: 'assets/pages/tokens.html',     module: 'assets/js/tokens.js'     }
+    tokens:     { html: 'assets/pages/tokens.html',     module: 'assets/js/tokens.js'     },
+    history: { html: 'assets/pages/history.html', module: 'assets/js/history.js' }
   };
 
   let socket = null;
