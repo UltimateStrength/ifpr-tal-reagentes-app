@@ -1,0 +1,88 @@
+<div id="page-tokens">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;
+              padding:16px;background:var(--white);
+              border-bottom:1px solid var(--card-bg);">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="tokens-back"
+              style="font-size:1.4rem;color:var(--text);line-height:1;
+                     background:none;border:none;cursor:pointer;">←</button>
+      <p style="font-size:1rem;font-weight:700;">Tokens de acesso</p>
+    </div>
+    <button id="btn-new-token" class="btn-primary"
+            style="width:auto;padding:8px 16px;font-size:0.85rem;">
+      + gerar
+    </button>
+  </div>
+
+  <div id="tokens-list" style="padding:16px;"></div>
+
+</div>
+
+<!-- Modal gerar token -->
+<div class="modal-overlay" id="token-modal" hidden>
+  <div class="modal-box">
+    <p class="modal-title">Gerar token de acesso</p>
+
+    <div class="form-group">
+      <label for="t-label">Identificação</label>
+      <input type="text" id="t-label"
+             placeholder="ex: Prof. João — visita 05/2026">
+    </div>
+
+    <div class="form-group" style="margin-bottom:0">
+      <label for="t-expires">Validade</label>
+      <select id="t-expires">
+        <option value="">Ilimitado</option>
+        <option value="1">1 dia</option>
+        <option value="7">7 dias</option>
+        <option value="30">30 dias</option>
+        <option value="90">90 dias</option>
+        <option value="365">1 ano</option>
+      </select>
+    </div>
+
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="modal-cancel" id="t-cancel">Cancelar</button>
+      <button class="modal-ok"     id="t-confirm">Gerar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal mostrar token gerado -->
+<div class="modal-overlay" id="token-result-modal" hidden>
+  <div class="modal-box">
+    <p class="modal-title">Token gerado! 🎉</p>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">
+      Compartilhe este código com o usuário. Ele não será mostrado novamente.
+    </p>
+
+    <div id="token-code-display"
+         style="background:var(--card-bg);border-radius:var(--radius);
+                padding:20px;text-align:center;margin-bottom:16px;">
+      <p id="token-code-text"
+         style="font-size:1.8rem;font-weight:800;letter-spacing:0.1em;
+                color:var(--text);font-family:monospace;"></p>
+    </div>
+
+    <button class="btn-primary" id="btn-copy-token"
+            style="margin-bottom:8px;">
+      📋 Copiar código
+    </button>
+    <button class="btn-secondary" id="btn-close-token-result">
+      Fechar
+    </button>
+  </div>
+</div>
+
+<!-- Modal confirmar revogação -->
+<div class="modal-overlay" id="revoke-modal" hidden>
+  <div class="modal-box">
+    <p class="modal-title">Revogar token?</p>
+    <p class="modal-message" id="revoke-msg"></p>
+    <div class="modal-actions">
+      <button class="modal-cancel"  id="rv-cancel">Cancelar</button>
+      <button class="modal-confirm" id="rv-confirm">Revogar</button>
+    </div>
+  </div>
+</div>
