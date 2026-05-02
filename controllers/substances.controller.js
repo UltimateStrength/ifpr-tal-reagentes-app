@@ -12,7 +12,7 @@ async function getAll(req, res) {
 
 async function add(req, res) {
   try {
-    const { name, quantity, expiry } = req.body;
+    const { name, quantity, expiry, unit, arrival } = req.body;
 
     if (!name || !quantity || !expiry) {
       return res.status(400).json({ error: 'name, quantity e expiry são obrigatórios' });
@@ -30,24 +30,24 @@ async function add(req, res) {
       name,
       Number(quantity),
       expiry,
-      req.session.userId
+      req.session.userId,
+      unit || 'un',
+      arrival || null
     );
 
-    // Grava no histórico
     await history.record(
       req.session.userId,
       req.session.displayName,
       history.ACTIONS.ADD,
-      { name, quantity: Number(quantity), expiry },
+      { name, quantity: Number(quantity), expiry, unit, arrival },
       req.session.sessionId,
       req.session.fingerprint
     );
 
-    // Notifica todos via Socket.IO
     req.app.get('io').emit('data-update', {
-      data: updated,
+      data:   updated,
       action: 'add',
-      by: req.session.displayName,
+      by:     req.session.displayName,
       detail: { name, expiry }
     });
 
@@ -61,7 +61,6 @@ async function remove(req, res) {
   try {
     const { sub } = req.params;
 
-    // Salva o estado antes de remover pro histórico
     const all   = await dm.getAll();
     const group = all.find(g => g.packages.some(p => p.subIndex === sub));
     const pkg   = group?.packages.find(p => p.subIndex === sub);
@@ -80,9 +79,9 @@ async function remove(req, res) {
     );
 
     req.app.get('io').emit('data-update', {
-      data: updated,
+      data:   updated,
       action: 'remove',
-      by: req.session.displayName,
+      by:     req.session.displayName,
       detail: { name: group.name, expiry: pkg.expiry }
     });
 
