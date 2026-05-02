@@ -65,6 +65,8 @@ window.__page = (() => {
     ?.addEventListener('click', () => window.__appRouter.loadPage('users'));
     document.getElementById('opt-tokens')
     ?.addEventListener('click', () => window.__appRouter.loadPage('tokens'));
+    document.getElementById('opt-history')
+    ?.addEventListener('click', () => window.__appRouter.loadPage('history'));
     document.getElementById('opt-export')
       ?.addEventListener('click', handleExport);
     document.getElementById('opt-restore')
