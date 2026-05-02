@@ -12,6 +12,7 @@ const importRoutes     = require('./routes/import.routes');
 const backupRoutes     = require('./routes/backup.routes');
 const usersRoutes      = require('./routes/users.routes');
 const historyRoutes    = require('./routes/history.routes');
+const tokensRoutes     = require('./routes/tokens.routes');
 
 const app    = express();
 const server = http.createServer(app);
@@ -48,6 +49,7 @@ app.use('/api/import/',     importRoutes);
 app.use('/api/backup',     backupRoutes);
 app.use('/api/users',      usersRoutes);
 app.use('/api/history',    historyRoutes);
+app.use('/api/tokens', tokensRoutes);
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
