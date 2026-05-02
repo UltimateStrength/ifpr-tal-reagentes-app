@@ -1,25 +1,33 @@
-const fs      = require('fs');
+const fs   = require('fs');
+const path = require('path');
 const { parseCSV }      = require('../utils/csvParser');
+const { parseXLSX }     = require('../utils/xlsxParser');
 const { mergePackages } = require('../utils/merger');
 const history           = require('../utils/history');
 
-async function importCSV(req, res) {
+async function importFile(req, res) {
   if (!req.file) {
     return res.status(400).json({ error: 'Nenhum arquivo enviado' });
   }
 
   const strategy = req.body.strategy || 'sum';
-
   if (!['sum', 'replace', 'ignore'].includes(strategy)) {
     return res.status(400).json({ error: 'strategy inválida' });
   }
 
   try {
-    const { valid, errors } = parseCSV(req.file.path);
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    let valid, errors;
+
+    if (ext === '.csv') {
+      ({ valid, errors } = parseCSV(req.file.path));
+    } else {
+      ({ valid, errors } = await parseXLSX(req.file.path));
+    }
 
     if (valid.length === 0) {
       return res.status(400).json({
-        error: 'Nenhuma linha válida encontrada no CSV',
+        error:   'Nenhuma linha válida encontrada',
         details: errors
       });
     }
@@ -36,13 +44,18 @@ async function importCSV(req, res) {
     );
 
     req.app.get('io').emit('data-update', {
-      data: updated,
+      data:   updated,
       action: 'import',
-      by: req.session.displayName,
+      by:     req.session.displayName,
       detail: { count: valid.length }
     });
 
-    res.json({ imported: valid.length, skipped: errors.length, errors, data: updated });
+    res.json({
+      imported: valid.length,
+      skipped:  errors.length,
+      errors,
+      data:     updated
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   } finally {
@@ -50,4 +63,4 @@ async function importCSV(req, res) {
   }
 }
 
-module.exports = { importCSV };
+module.exports = { importFile };
