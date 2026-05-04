@@ -1,8 +1,0 @@
-node_modules/
-.env
-temp/*
-!temp/.gitkeep
-data/backups/
-.fly/
-test_template.xlsx
-*.log
