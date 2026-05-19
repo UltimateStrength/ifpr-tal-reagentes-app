@@ -21,19 +21,19 @@
       <img src="assets/img/icons/logo.png" alt="Logo" id="login-logo">
       <p id="login-title">Confirme sua identidade:</p>
 
-      <label for="input-user">usuario:</label>
+      <label for="input-user">Usuario:</label>
       <input type="text" id="input-user" autocomplete="username">
 
-      <label for="input-pass">senha:</label>
+      <label for="input-pass">Senha:</label>
       <input type="password" id="input-pass" autocomplete="current-password">
 
-      <button id="btn-login">entrar</button>
+      <button id="btn-login">Conectar-se</button>
       <p id="login-error" hidden>Usuário ou senha incorretos.</p>
 
       <div id="login-bottom">
-        <a href="#" id="link-token">entrar com token</a>
+        <a href="#" id="link-token">Entrar como visualizador</a>
         <img src="assets/img/icons/ifpr.png" alt="IFPR" id="ifpr-logo">
-        <a href="assets/pages/about.html" id="link-about">sobre o app</a>
+        <a href="assets/pages/about.html" id="link-about" style="text-decoration: underline;">Sobre o app</a>
       </div>
     </div>
   </div>
@@ -44,14 +44,14 @@
       <img src="assets/img/icons/logo.png" alt="Logo" id="login-logo">
       <p id="login-title">Digite seu token de acesso:</p>
 
-      <label for="input-token">token:</label>
-      <input type="text" id="input-token" autocomplete="off" placeholder="ex: ABC123">
+      <label for="input-token" style="font-size: 1rem;">Token:</label>
+      <input type="text" id="input-token" autocomplete="off" placeholder="ex: A5G6-BHR4">
 
-      <button id="btn-token-login">entrar</button>
+      <button id="btn-token-login">Conectar-se</button>
       <p id="token-error" hidden>Token inválido ou expirado.</p>
 
-      <a href="#" id="link-back-login" style="font-size:0.85rem;color:var(--muted);">
-        ← voltar ao login
+      <a href="#" id="link-back-login" style="color:var(--muted);">
+        ← Voltar ao login
       </a>
     </div>
   </div>
@@ -83,7 +83,6 @@
     </nav>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/app.js"></script>
