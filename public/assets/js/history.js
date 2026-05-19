@@ -3,11 +3,11 @@ window.__page = (() => {
   let currentFilter = 'all';
 
   const ACTION_LABELS = {
-    add:     '➕ Adicionou',
-    remove:  '🗑️ Removeu',
-    import:  '⬆️ Importou',
-    restore: '🔄 Restaurou',
-    revert:  '↩️ Reverteu'
+    add:     'Adicionou',
+    remove:  'Removeu',
+    import:  '⬆Importou',
+    restore: 'Restaurou',
+    revert:  '↩Reverteu'
   };
 
   const ACTION_COLORS = {

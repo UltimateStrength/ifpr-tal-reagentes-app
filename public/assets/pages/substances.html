@@ -3,14 +3,14 @@
               position:sticky;top:0;z-index:10;">
     <div style="display:flex;gap:8px;">
       <input type="text" id="search-input"
-             placeholder="digite o nome da substância"
+             placeholder="Insira o reagente"
              style="flex:1;background:var(--white);padding:12px 14px;
                     border-radius:var(--radius);font-size:0.95rem;
                     box-shadow:0 1px 4px rgba(0,0,0,0.08);
                     border:2px solid transparent;">
       <button id="btn-search" class="btn-primary"
               style="width:auto;padding:0 20px;border-radius:var(--radius);">
-        buscar
+        Buscar
       </button>
     </div>
   </div>
@@ -25,7 +25,7 @@
     <div id="modal-remove-msg" style="margin-bottom:16px;"></div>
     <div class="modal-actions">
       <button class="modal-cancel"  id="modal-cancel">Cancelar</button>
-      <button class="modal-confirm" id="modal-confirm">Remover</button>
+      <button class="modal-confirm" id="modal-confirm">Confirmar</button>
     </div>
   </div>
 </div>
@@ -35,9 +35,9 @@
   <div class="modal-box">
     <p class="modal-title" id="options-modal-title">Opções</p>
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
-      <button class="btn-primary"   id="opt-edit">➕ Adicionar embalagem</button>
-      <button class="btn-secondary" id="opt-edit-pkg">✏️ Editar embalagem existente</button>
-      <button class="btn-danger"    id="opt-delete">🗑️ Deletar embalagem</button>
+      <button class="btn-primary"   id="opt-edit">Adicionar</button>
+      <button class="btn-secondary" id="opt-edit-pkg">Editar</button>
+      <button class="btn-danger"    id="opt-delete">Remover</button>
       <button class="btn-secondary" id="opt-cancel">Cancelar</button>
     </div>
   </div>
@@ -46,7 +46,7 @@
 <!-- Modal quick add -->
 <div class="modal-overlay" id="quick-add-modal" hidden>
   <div class="modal-box">
-    <p class="modal-title" id="quick-add-title">Adicionar embalagem</p>
+    <p class="modal-title" id="quick-add-title">Adicionar</p>
 
     <!-- Quantidade + Unidade lado a lado -->
     <div style="display:flex;gap:10px;">
@@ -87,7 +87,7 @@
 <!-- Modal editar embalagem existente -->
 <div class="modal-overlay" id="edit-pkg-modal" hidden>
   <div class="modal-box">
-    <p class="modal-title" id="edit-pkg-title">Editar embalagem</p>
+    <p class="modal-title" id="edit-pkg-title">Editar</p>
 
     <div id="edit-pkg-list"
          style="margin-bottom:16px;max-height:180px;overflow-y:auto;"></div>
