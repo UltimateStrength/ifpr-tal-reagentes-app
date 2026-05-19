@@ -48,17 +48,22 @@ window.__page = (() => {
     grid.innerHTML = options.map(op => `
       <button class="menu-grid-item" id="${op.id}"
               style="display:flex;flex-direction:column;align-items:center;
-                     justify-content:center;gap:8px;padding:16px 8px;
-                     background:var(--white);border-radius:var(--radius);
-                     border:none;cursor:pointer;font-family:inherit;
-                     font-size:0.78rem;font-weight:700;color:var(--text);
-                     text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+                    justify-content:center;gap:8px;padding:16px 8px;
+                    background:var(--white);border-radius:var(--radius);
+                    border:none;cursor:pointer;font-family:inherit;
+                    font-size:0.78rem;font-weight:700;color:var(--text);
+                    text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+        
         <img src="${op.img}" alt="${op.label}"
-             onerror="this.style.background='#c8c8c8'"
-             style="width:56px;height:56px;object-fit:contain;
-                    background:var(--card-bg);border-radius:0;">
+            onerror="this.style.background='#c8c8c8'"
+            style="width:56px;height:56px;object-fit:contain;
+                    background:transparent;border-radius:0;
+                    filter: invert(42%) sepia(93%) saturate(463%)
+                            hue-rotate(82deg) brightness(95%) contrast(90%);">
+        
         <span>${op.label}</span>
-      </button>`).join('');
+      </button>
+    `).join('');
 
     // Binds
     document.getElementById('opt-users')
