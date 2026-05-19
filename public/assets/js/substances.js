@@ -89,8 +89,8 @@ window.__page = (() => {
 
     if (filtered.length === 0) {
       list.innerHTML = `<div class="empty-state">
-        ${term ? 'Nenhuma substância encontrada.'
-               : 'Nenhuma substância cadastrada.'}
+        ${term ? 'Nada encontrado.'
+               : 'Nada cadastrado.'}
       </div>`;
       return;
     }
@@ -245,7 +245,7 @@ function openQuickAdd(groupName) {
       });
       modal.hidden = true;
       renderSubstances(document.getElementById('search-input')?.value || '');
-      window.showToast('Embalagem adicionada!');
+      window.showToast('Adicionado com sucesso!');
     } catch (err) {
       window.showToast(`Erro: ${err.message}`);
       newOk.disabled = false;
@@ -390,7 +390,7 @@ function openEditPkgModal(groupName) {
 
     newOk.addEventListener('click', async () => {
       const selected = document.querySelector('input[name="del-pkg"]:checked');
-      if (!selected) { window.showToast('Selecione uma embalagem.'); return; }
+      if (!selected) { window.showToast('Você deve selecionar ao menos um.'); return; }
 
       newOk.disabled = true;
       try {
@@ -589,19 +589,19 @@ document.getElementById('edit-btn-deletar')
                            data-unit="${p.unit || 'un'}"
                            data-arrival="${p.arrival || ''}"
                            style="width:auto;padding:6px 14px;font-size:0.8rem;">
-                     editar
+                     Editar
                    </button>`
                 : `<button class="btn-danger pkg-del-btn"
                            data-sub="${p.subIndex}"
                            style="width:auto;padding:6px 14px;font-size:0.8rem;">
-                     deletar
+                     Remover
                    </button>`
               }
             </div>`).join('')}
           ${mode === 'delete'
             ? `<button class="btn-danger del-all-btn" data-name="${g.name}"
                        style="margin-top:4px;font-size:0.85rem;padding:10px;">
-                 deletar tudo (${g.name})
+                 Deletar tudo (${g.name})
                </button>`
             : ''}
         </div>`).join('');
@@ -629,7 +629,7 @@ document.getElementById('edit-btn-deletar')
   }
 
   async function confirmDeletePkg(subIndex, cb) {
-    if (!confirm('Remover esta embalagem?')) return;
+    if (!confirm('Você quer remover mesmo?')) return;
     try {
       window.__substancesData = await API.delete(`/substances/${subIndex}`);
       window.showToast('Removida.');
