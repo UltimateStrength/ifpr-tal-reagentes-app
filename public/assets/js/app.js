@@ -8,6 +8,7 @@ const AppRouter = (() => {
   let currentPage  = null;
   let currentRole  = null;
   let displayName  = null;
+  let pollingTimer = null;
   const PAGE_CACHE = {};
 
   const PAGES = {
@@ -19,33 +20,8 @@ const AppRouter = (() => {
     about:      { html: 'assets/pages/about-spa.html',  module: 'assets/js/about.js'      },
     users:      { html: 'assets/pages/users.html',      module: 'assets/js/users.js'      },
     tokens:     { html: 'assets/pages/tokens.html',     module: 'assets/js/tokens.js'     },
-    history: { html: 'assets/pages/history.html', module: 'assets/js/history.js' }
+    history:    { html: 'assets/pages/history.html',    module: 'assets/js/history.js'    }
   };
-
-  let socket = null;
-
-  function connectSocket() {
-    socket = io();
-
-    socket.on('data-update', ({ data, action, by, detail }) => {
-      window.__substancesData = data;
-      window.__page?.onDataUpdate?.(data);
-
-      const msgs = {
-        add:     `${by} adicionou ${detail?.name || ''}`,
-        remove:  `${by} removeu ${detail?.name || ''}`,
-        import:  `${by} importou ${detail?.count} reagentes`,
-        restore: `${by} restaurou um backup`,
-        revert:  `Sessão revertida por admin`
-      };
-
-      const msg = msgs[action];
-      if (msg) showToast(msg, 4000);
-    });
-
-    socket.on('disconnect', () => showToast('Conexão perdida...', 3000));
-    socket.on('reconnect',  () => showToast('Reconectado.', 2000));
-  }
 
   function showToast(msg, duration = 2500) {
     let toast = document.getElementById('app-toast');
@@ -67,9 +43,7 @@ const AppRouter = (() => {
     return new Promise((resolve) => {
       const existing = document.querySelector(`script[data-page-module="${src}"]`);
       if (existing) existing.remove();
-
       window.__page = null;
-
       const script = document.createElement('script');
       script.src = `${src}?v=${Date.now()}`;
       script.dataset.pageModule = src;
@@ -78,36 +52,51 @@ const AppRouter = (() => {
     });
   }
 
-async function loadPage(name) {
-  if (!PAGES[name]) return;
+  async function loadPage(name) {
+    if (!PAGES[name]) return;
 
-  if (currentRole === 'viewer' && ['edit', 'import'].includes(name)) {
-    showToast('Sem permissão para esta ação.');
-    return;
+    if (currentRole === 'viewer' && ['edit', 'import'].includes(name)) {
+      showToast('Sem permissão para esta ação.');
+      return;
+    }
+
+    currentPage = name;
+
+    navBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.page === name);
+    });
+
+    if (!PAGE_CACHE[name] || name === 'substances') {
+      const res = await fetch(PAGES[name].html + `?v=${Date.now()}`);
+      PAGE_CACHE[name] = await res.text();
+    }
+
+    pageContent.innerHTML = PAGE_CACHE[name];
+    pageContent.scrollTop = 0;
+
+    await loadModule(PAGES[name].module);
+    window.__page?.init?.(name, { displayName, role: currentRole });
   }
 
-  currentPage = name;
-
-  navBtns.forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.page === name);
-  });
-
-  // Não cacheia substances pra sempre pegar HTML atualizado
-  if (!PAGE_CACHE[name] || name === 'substances') {
-    const res = await fetch(PAGES[name].html + `?v=${Date.now()}`);
-    PAGE_CACHE[name] = await res.text();
+  function startPolling() {
+    if (pollingTimer) return;
+    pollingTimer = setInterval(async () => {
+      if (!['home', 'substances'].includes(currentPage)) return;
+      try {
+        const data = await API.get('/substances');
+        window.__substancesData = data;
+        window.__page?.onDataUpdate?.(data);
+      } catch { /* tenta de novo em 5s */ }
+    }, 5000);
   }
 
-  pageContent.innerHTML = PAGE_CACHE[name];
-  pageContent.scrollTop = 0;
-
-  await loadModule(PAGES[name].module);
-
-  window.__page?.init?.(name, { displayName, role: currentRole });
-}
+  function stopPolling() {
+    clearInterval(pollingTimer);
+    pollingTimer = null;
+  }
 
   function goLogin() {
-    if (socket) socket.disconnect();
+    stopPolling();
     appContainer.hidden = true;
     loginScreen.hidden  = false;
     if (tokenScreen) tokenScreen.hidden = true;
@@ -135,7 +124,7 @@ async function loadPage(name) {
       btn.addEventListener('click', () => loadPage(btn.dataset.page));
     });
 
-    connectSocket();
+    startPolling();
     await loadPage('home');
   }
 
