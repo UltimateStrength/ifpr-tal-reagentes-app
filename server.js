@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express    = require('express');
 const session    = require('express-session');
-const MongoStore = require('connect-mongo');
+const MongoStore = require('connect-mongo').default || require('connect-mongo');
 const path       = require('path');
 const { connectDB } = require('./db/connection');
 
@@ -29,7 +29,7 @@ app.use(session({
     mongoUrl: process.env.MONGODB_URI,
     dbName: 'reagentes',
     collectionName: 'sessions',
-    ttl: 60 * 60 * 8 // 8 horas
+    ttl: 60 * 60 * 8
   })
 }));
 
