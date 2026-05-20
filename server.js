@@ -1,16 +1,17 @@
 require('dotenv').config();
-const express = require('express');
-const session = require('express-session');
-const path    = require('path');
+const express    = require('express');
+const session    = require('express-session');
+const MongoStore = require('connect-mongo');
+const path       = require('path');
 const { connectDB } = require('./db/connection');
 
-const authRoutes      = require('./routes/auth.routes');
+const authRoutes       = require('./routes/auth.routes');
 const substancesRoutes = require('./routes/substances.routes');
-const importRoutes    = require('./routes/import.routes');
-const backupRoutes    = require('./routes/backup.routes');
-const usersRoutes     = require('./routes/users.routes');
-const historyRoutes   = require('./routes/history.routes');
-const tokensRoutes    = require('./routes/tokens.routes');
+const importRoutes     = require('./routes/import.routes');
+const backupRoutes     = require('./routes/backup.routes');
+const usersRoutes      = require('./routes/users.routes');
+const historyRoutes    = require('./routes/history.routes');
+const tokensRoutes     = require('./routes/tokens.routes');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -23,10 +24,16 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'fallback_secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 8 }
+  cookie: { maxAge: 1000 * 60 * 60 * 8 },
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    dbName: 'reagentes',
+    collectionName: 'sessions',
+    ttl: 60 * 60 * 8 // 8 horas
+  })
 }));
 
-app.set('io', { emit: () => {} }); // stub — sem Socket.IO
+app.set('io', { emit: () => {} });
 
 app.use('/api/auth',       authRoutes);
 app.use('/api/substances', substancesRoutes);
