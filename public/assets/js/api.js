@@ -16,7 +16,13 @@ const API = (() => {
     }
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Erro desconhecido');
+    if (!res.ok) {
+      const err = new Error(data.error || 'Erro desconhecido');
+      // Preserva campos extras do corpo de erro (ex: `conflict` do 409 de
+      // renumeração) pra quem chamou decidir o que fazer com eles.
+      Object.assign(err, data);
+      throw err;
+    }
     return data;
   }
 
@@ -41,6 +47,7 @@ const API = (() => {
     get:    ep       => request('GET',    ep),
     post:   (ep, b)  => request('POST',   ep, b),
     put:    (ep, b)  => request('PUT',    ep, b),
+    patch:  (ep, b)  => request('PATCH',  ep, b),
     delete: ep       => request('DELETE', ep),
     upload: (ep, f)  => upload(ep, f)
   };

@@ -7,26 +7,33 @@ window.__page = (() => {
   };
 
   const GRID_OPTIONS = {
+// (developer, admin e staff podem ver/criar; exclusão é bloqueada no backend pra quem não é admin+)
     developer: [
-      { id: 'opt-users',   img: 'assets/img/menu/users.png',   label: 'Usuários'  },
-      { id: 'opt-tokens',  img: 'assets/img/menu/tokens.png',  label: 'Tokens'    },
-      { id: 'opt-history', img: 'assets/img/menu/history.png', label: 'Histórico' },
-      { id: 'opt-export',  img: 'assets/img/menu/export.png',  label: 'Backup'    },
-      { id: 'opt-restore', img: 'assets/img/menu/restore.png', label: 'Restaurar' },
-      { id: 'opt-about',   img: 'assets/img/menu/about.png',   label: 'Sobre'     },
+      { id: 'opt-users',    img: 'assets/img/menu/users.png',    label: 'Usuários'  },
+      { id: 'opt-armarios', img: 'assets/img/menu/armarios.png', label: 'Armários'  },
+      { id: 'opt-solicitacoes', img: 'assets/img/menu/solicitacoes.png', label: 'Solicitações' },
+      { id: 'opt-tokens',   img: 'assets/img/menu/tokens.png',   label: 'Tokens'    },
+      { id: 'opt-history',  img: 'assets/img/menu/history.png',  label: 'Histórico' },
+      { id: 'opt-export',   img: 'assets/img/menu/export.png',   label: 'Backup'    },
+      { id: 'opt-restore',  img: 'assets/img/menu/restore.png',  label: 'Restaurar' },
+      { id: 'opt-about',    img: 'assets/img/menu/about.png',    label: 'Sobre'     },
     ],
     admin: [
-      { id: 'opt-users',   img: 'assets/img/menu/users.png',   label: 'Usuários'  },
-      { id: 'opt-tokens',  img: 'assets/img/menu/tokens.png',  label: 'Tokens'    },
-      { id: 'opt-history', img: 'assets/img/menu/history.png', label: 'Histórico' },
-      { id: 'opt-export',  img: 'assets/img/menu/export.png',  label: 'Backup'    },
-      { id: 'opt-about',   img: 'assets/img/menu/about.png',   label: 'Sobre'     },
-      { id: 'opt-logout',  img: 'assets/img/menu/logout.png',  label: 'Sair'      },
+      { id: 'opt-users',    img: 'assets/img/menu/users.png',    label: 'Usuários'  },
+      { id: 'opt-armarios', img: 'assets/img/menu/armarios.png', label: 'Armários'  },
+      { id: 'opt-solicitacoes', img: 'assets/img/menu/solicitacoes.png', label: 'Solicitações' },
+      { id: 'opt-tokens',   img: 'assets/img/menu/tokens.png',   label: 'Tokens'    },
+      { id: 'opt-history',  img: 'assets/img/menu/history.png',  label: 'Histórico' },
+      { id: 'opt-export',   img: 'assets/img/menu/export.png',   label: 'Backup'    },
+      { id: 'opt-about',    img: 'assets/img/menu/about.png',    label: 'Sobre'     },
+      { id: 'opt-logout',   img: 'assets/img/menu/logout.png',   label: 'Sair'      },
     ],
     staff: [
-      { id: 'opt-export',  img: 'assets/img/menu/export.png',  label: 'Backup'    },
-      { id: 'opt-about',   img: 'assets/img/menu/about.png',   label: 'Sobre'     },
-      { id: 'opt-logout',  img: 'assets/img/menu/logout.png',  label: 'Sair'      },
+      { id: 'opt-armarios', img: 'assets/img/menu/armarios.png', label: 'Armários'  },
+      { id: 'opt-solicitacoes', img: 'assets/img/menu/solicitacoes.png', label: 'Solicitações' },
+      { id: 'opt-export',   img: 'assets/img/menu/export.png',   label: 'Backup'    },
+      { id: 'opt-about',    img: 'assets/img/menu/about.png',    label: 'Sobre'     },
+      { id: 'opt-logout',   img: 'assets/img/menu/logout.png',   label: 'Sair'      },
     ],
     viewer: [
       { id: 'opt-about',   img: 'assets/img/menu/about.png',   label: 'Sobre'     },
@@ -72,6 +79,10 @@ window.__page = (() => {
     ?.addEventListener('click', () => window.__appRouter.loadPage('tokens'));
     document.getElementById('opt-history')
     ?.addEventListener('click', () => window.__appRouter.loadPage('history'));
+    document.getElementById('opt-armarios')
+    ?.addEventListener('click', () => window.__appRouter.loadPage('armarios'));
+    document.getElementById('opt-solicitacoes')
+    ?.addEventListener('click', () => window.__appRouter.loadPage('solicitacoes'));
     document.getElementById('opt-export')
       ?.addEventListener('click', handleExport);
     document.getElementById('opt-restore')
@@ -110,7 +121,10 @@ window.__page = (() => {
   async function handleRestore(e) {
     const file = e.target.files[0];
     if (!file) return;
-    if (!confirm('Substituir todos os dados atuais com este backup?')) {
+    if (!await window.confirmModal(
+      'Substituir todos os dados atuais com este backup?',
+      { confirmLabel: 'Substituir' }
+    )) {
       e.target.value = ''; return;
     }
     try {

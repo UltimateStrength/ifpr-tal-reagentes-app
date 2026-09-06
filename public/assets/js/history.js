@@ -3,20 +3,55 @@ window.__page = (() => {
   let currentFilter = 'all';
 
   const ACTION_LABELS = {
-    add:     'Adicionou',
-    remove:  'Removeu',
-    import:  '⬆Importou',
-    restore: 'Restaurou',
-    revert:  '↩Reverteu'
+    add:              'Adicionou',
+    remove:           'Removeu',
+    import:           '⬆Importou',
+    restore:          'Restaurou',
+    revert:           '↩Reverteu',
+    consume:          'Registrou uso em',
+    queue:            'Atualizou fila de',
+    'update-details': 'Editou informações gerais de',
+    'update-package': 'Editou embalagem de',
+    renumber:         'Renumerou'
   };
 
   const ACTION_COLORS = {
-    add:     '#2f9e3f',
-    remove:  '#ca191f',
-    import:  '#0284c7',
-    restore: '#7c3aed',
-    revert:  '#e07b00'
+    add:              '#2f9e3f',
+    remove:           '#ca191f',
+    import:           '#0284c7',
+    restore:          '#7c3aed',
+    revert:           '#e07b00',
+    consume:          '#0284c7',
+    queue:            '#e07b00',
+    'update-details': '#6b7280',
+    'update-package': '#6b7280',
+    renumber:         '#7c3aed'
   };
+
+  // Constrói a descrição de cada ação a partir do `detail` salvo — formatos
+  // variam por tipo de ação, então trata caso a caso; ações antigas (salvas
+  // antes desses campos existirem) caem no fallback genérico no fim.
+  function describeDetail(a) {
+    const d = a.detail || {};
+    switch (a.action) {
+      case 'consume':
+        return `${d.amount ?? '?'} em ${d.subIndex || '—'}${d.note ? ` (${d.note})` : ''}`;
+      case 'queue':
+        return `${d.subIndex || '—'} → ${d.status === 'solicitado' ? 'quase acabando' : 'removido da fila'}`;
+      case 'update-details':
+        return d.nameLower || '';
+      case 'update-package':
+        return `${d.subIndex || '—'}${d.armario ? ` · ${d.armario}` : ''}${d.situacao ? ` · ${d.situacao}` : ''}`;
+      case 'renumber':
+        return `${d.nameLower || ''} → nº ${d.number ?? '?'}`;
+      default:
+        return d.name
+          ? `${d.name}${d.expiry ? ` (${d.expiry})` : ''}`
+          : d.count
+            ? `${d.count} item(ns)`
+            : '';
+    }
+  }
 
   async function init() {
     document.getElementById('history-back')
@@ -87,7 +122,7 @@ window.__page = (() => {
       const date    = new Date(s.lastAt).toLocaleString('pt-BR');
       const count   = s.actions.length;
       const preview = s.actions.slice(0, 2).map(a =>
-        `${ACTION_LABELS[a.action] || a.action} ${a.detail?.name || ''}`
+        `${ACTION_LABELS[a.action] || a.action} ${describeDetail(a)}`
       ).join(', ');
 
       return `
@@ -135,11 +170,7 @@ window.__page = (() => {
 
     actList.innerHTML = session.actions.map(a => {
       const color  = ACTION_COLORS[a.action] || '#6b7280';
-      const detail = a.detail?.name
-        ? `${a.detail.name}${a.detail.expiry ? ` (${a.detail.expiry})` : ''}`
-        : a.detail?.count
-          ? `${a.detail.count} item(ns)`
-          : '';
+      const detail = describeDetail(a);
 
       return `
         <div style="display:flex;align-items:center;gap:10px;
@@ -168,7 +199,10 @@ window.__page = (() => {
     newClose.addEventListener('click', () => { modal.hidden = true; });
 
     newRevert.addEventListener('click', async () => {
-      if (!confirm(`Reverter TODAS as ações desta sessão de "${session.username}"?`)) return;
+      if (!await window.confirmModal(
+        `Reverter TODAS as ações desta sessão de "${session.username}"?`,
+        { confirmLabel: 'Reverter' }
+      )) return;
       newRevert.disabled = true;
       try {
         await API.delete(`/history/session/${session.sessionId}`);
@@ -177,6 +211,9 @@ window.__page = (() => {
         await loadHistory();
       } catch (err) {
         window.showToast(`Erro: ${err.message}`);
+      } finally {
+        // cloneNode carrega o disabled adiante — sem isto, reverter uma
+        // segunda sessão reabriria o modal com o botão travado pra sempre.
         newRevert.disabled = false;
       }
     });

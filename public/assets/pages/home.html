@@ -17,23 +17,26 @@
         Reagentes
       </p>
       <div style="display:flex;justify-content:space-around;text-align:center;">
-        <div>
+        <button class="home-ind" data-kind="total"
+                style="background:none;border:none;cursor:pointer;font-family:inherit;">
           <p id="ind-total"
              style="font-size:2rem;font-weight:800;color:var(--text);">—</p>
           <p style="font-size:0.72rem;font-weight:600;color:var(--muted);">TOTAL</p>
-        </div>
+        </button>
         <div style="width:1px;background:var(--card-bg);"></div>
-        <div>
+        <button class="home-ind" data-kind="soon"
+                style="background:none;border:none;cursor:pointer;font-family:inherit;">
           <p id="ind-soon"
              style="font-size:2rem;font-weight:800;color:#e07b00;">—</p>
           <p style="font-size:0.72rem;font-weight:600;color:var(--muted);">P/VENCER</p>
-        </div>
+        </button>
         <div style="width:1px;background:var(--card-bg);"></div>
-        <div>
+        <button class="home-ind" data-kind="expired"
+                style="background:none;border:none;cursor:pointer;font-family:inherit;">
           <p id="ind-expired"
              style="font-size:2rem;font-weight:800;color:var(--red);">—</p>
           <p style="font-size:0.72rem;font-weight:600;color:var(--muted);">VENCIDO</p>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -51,5 +54,18 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Modal de detalhe dos indicadores (total / p-vencer / vencido) -->
+<div class="modal-overlay" id="home-detail-modal" hidden>
+  <div class="modal-box">
+    <p class="modal-title" id="home-detail-title">Detalhe</p>
+    <div id="home-detail-list" style="margin-bottom:16px;"></div>
+    <button id="home-detail-close"
+            style="width:100%;padding:10px;background:none;
+                   border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;">
+      Fechar
+    </button>
   </div>
 </div>

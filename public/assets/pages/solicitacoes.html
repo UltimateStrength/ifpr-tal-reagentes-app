@@ -1,0 +1,31 @@
+<div style="background:linear-gradient(to bottom, var(--green-dark), var(--green));
+            padding:20px 20px 20px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button id="sol-back"
+            style="font-size:1.4rem;color:var(--white);line-height:1;
+                   background:none;border:none;cursor:pointer;">←</button>
+    <p style="font-size:1.3rem;font-weight:800;color:var(--white);">Fila de Solicitações</p>
+  </div>
+  <p style="font-size:0.85rem;color:rgba(255,255,255,0.85);margin-top:4px;margin-left:36px;">
+    Embalagens marcadas como quase acabando
+  </p>
+</div>
+
+<div id="solicitacoes-list" style="padding:16px;"></div>
+
+<!-- Modal de detalhe -->
+<div class="modal-overlay" id="sol-detail-modal" hidden>
+  <div class="modal-box">
+    <p class="modal-title" id="sol-detail-title">Detalhe</p>
+    <div id="sol-detail-body" style="margin-bottom:16px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="sol-manter">Manter</button>
+      <button class="modal-confirm" id="sol-apagar">Apagar da lista</button>
+    </div>
+    <button id="sol-detail-close"
+            style="width:100%;margin-top:10px;padding:10px;background:none;
+                   border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;">
+      Fechar
+    </button>
+  </div>
+</div>

@@ -61,6 +61,18 @@
                     overflow:hidden;margin-top:2px;
                     box-shadow:0 2px 8px rgba(0,0,0,0.1);"></div>
       </div>
+      <div class="form-group">
+        <label for="c-number">Número de referência</label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="number" id="c-number" min="1" step="1" disabled style="flex:1;">
+          <label for="c-number-unlock"
+                 style="display:flex;align-items:center;gap:6px;
+                        font-size:0.8rem;font-weight:400;white-space:nowrap;margin:0;">
+            <input type="checkbox" id="c-number-unlock" style="width:16px;height:16px;">
+            editar manualmente
+          </label>
+        </div>
+      </div>
       <div style="display:flex;gap:10px;">
         <div class="form-group" style="flex:2;">
           <label for="c-qty">Quantidade</label>
@@ -85,6 +97,67 @@
       <div class="form-group">
         <label for="c-arrival">Data de chegada</label>
         <input type="date" id="c-arrival">
+      </div>
+            <div class="form-group">
+        <label for="c-cas">CAS <span style="color:var(--muted);font-weight:400;">(opcional)</span></label>
+        <input type="text" id="c-cas" placeholder="ex: 64-17-5" autocomplete="off">
+      </div>
+
+      <div class="form-group form-check">
+        <input type="checkbox" id="c-pf">
+        <label for="c-pf">Controlado pela Polícia Federal</label>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label for="c-armario">Armário <span style="color:var(--muted);font-weight:400;">(opcional)</span></label>
+          <select id="c-armario">
+            <option value="">—</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label for="c-situacao">Situação <span style="color:var(--muted);font-weight:400;">(opcional)</span></label>
+          <select id="c-situacao">
+            <option value="">—</option>
+            <option value="fechado">Fechado</option>
+            <option value="aberto">Aberto</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="c-local">Local atual <span style="color:var(--muted);font-weight:400;">(opcional)</span></label>
+        <input type="text" id="c-local" placeholder="ex: Sala de reagentes" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="c-marca">Marca <span style="color:var(--muted);font-weight:400;">(opcional)</span></label>
+        <input type="text" id="c-marca" placeholder="ex: Reatec" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="c-tags">Tags <span style="color:var(--muted);font-weight:400;">(opcional, separadas por vírgula)</span></label>
+        <input type="text" id="c-tags" placeholder="ex: inflamável, uso frequente" autocomplete="off">
+        <div id="c-tags-suggestions"
+             style="display:none;background:var(--white);
+                    border:1px solid #ddd;border-radius:var(--radius-sm);
+                    overflow:hidden;margin-top:2px;
+                    box-shadow:0 2px 8px rgba(0,0,0,0.1);"></div>
+      </div>
+    
+      <div class="form-group">
+        <label for="c-obs">Observações <span style="color:var(--muted);font-weight:400;">(opcional)</span></label>
+        <textarea id="c-obs" rows="3" style="width:100%;padding:12px;border-radius:var(--radius-sm);
+                  font-family:inherit;font-size:0.95rem;border:2px solid transparent;
+                  background:var(--card-bg);resize:vertical;"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="c-incompat">Incompatibilidades <span style="color:var(--muted);font-weight:400;">(opcional)</span></label>
+        <textarea id="c-incompat" rows="2" placeholder="ex: não misturar com ácidos fortes"
+                  style="width:100%;padding:12px;border-radius:var(--radius-sm);
+                  font-family:inherit;font-size:0.95rem;border:2px solid transparent;
+                  background:var(--card-bg);resize:vertical;"></textarea>
       </div>
       <button class="btn-primary" id="btn-criar-confirmar">criar</button>
       <p id="criar-feedback"

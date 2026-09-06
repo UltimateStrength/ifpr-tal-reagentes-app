@@ -1,3 +1,4 @@
+// utils/xlsxParser.js
 const ExcelJS = require('exceljs');
 
 async function parseXLSX(filePath) {
@@ -60,6 +61,145 @@ async function parseXLSX(filePath) {
   return { valid, errors };
 }
 
+// --- Parser dedicado ao formato oficial do TAL (aba "Organizado") ---
+// Colunas: Nº | Nome do Reagente | C.A.S | Controlado P.F | (vazia) |
+//          Incompatibilidades | Armário Sugerido | Validade | Situação |
+//          Local Atual | Vencido
+//
+// Diferenças em relação ao template próprio do sistema:
+// - Não tem coluna de quantidade/unidade — a planilha oficial nunca
+//   controlou isso. Itens entram com quantity:null e ficam marcados em
+//   "warnings" pra completar manualmente depois do import.
+// - Situação vem com valores sujos (Aberto/Fechado + variações e erros
+//   de digitação) e às vezes com "Finalizou"/"Acabou" — que não é um
+//   estado de embalagem, é o reagente tendo sido extinto. Essas linhas
+//   NÃO entram como reagente ativo: vão pra "finalizados", pra revisão
+//   manual (etapa 9 vai automatizar esse fluxo via sistema de baixa).
+
+const ARMARIOS_CONHECIDOS = [
+  'Armário 2', 'Armário Solventes', 'Armário Ácidos',
+  'Armário Sais', 'Armário Bases', 'Geladeira'
+];
+
+function normalizeArmario(raw) {
+  if (!raw) return null;
+  const clean = raw.toString().trim();
+  const match = ARMARIOS_CONHECIDOS.find(
+    a => a.toLowerCase() === clean.toLowerCase()
+  );
+  return match || clean; // desconhecido: mantém como veio (etapa 4 resolve isso)
+}
+
+function normalizeControladoPF(raw) {
+  if (!raw) return false;
+  return raw.toString().trim().toUpperCase() === 'SIM';
+}
+
+// Retorna 'aberto' | 'fechado' | 'finalizado' | null (não reconhecido)
+function normalizeSituacao(raw) {
+  if (!raw) return null;
+  const clean = raw.toString().trim().toLowerCase();
+
+  if (clean.startsWith('finaliz') || clean.startsWith('acabou')) return 'finalizado';
+  if (clean.startsWith('abert'))  return 'aberto';
+  if (clean.startsWith('fech'))   return 'fechado'; // cobre "fechado", "fechada", "fecahdo"
+
+  return null;
+}
+
+function normalizeDateFromCell(val) {
+  if (!val || val === '-') return null;
+  if (val instanceof Date) return val.toISOString().slice(0, 10);
+  const str = val.toString().trim().replace(/\//g, '-');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  if (/^\d{4}-\d{2}$/.test(str))        return `${str}-01`;
+  return null;
+}
+
+async function parseOrganizado(filePath) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(filePath);
+
+  const sheet = workbook.getWorksheet('Organizado') || workbook.worksheets[0];
+
+  const valid       = [];   // reagentes prontos pra importar
+  const finalizados = [];   // situação = finalizou/acabou — fora do import, pra revisão
+  const warnings     = [];  // entrou, mas com dado incompleto (ex: sem quantidade)
+  const errors        = []; // linha rejeitada
+
+  const headerRow = sheet.getRow(1);
+  const headers   = {};
+  headerRow.eachCell((cell, colNum) => {
+    const key = cell.value?.toString().trim().toLowerCase();
+    if (key) headers[key] = colNum;
+  });
+
+  const col = (name) => headers[name];
+
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+
+    const numeroOriginalRaw   = row.getCell(col('nº'))?.value;
+    const name                = row.getCell(col('nome do reagente'))?.text?.trim();
+    const cas                  = row.getCell(col('c.a.s'))?.text?.trim() || null;
+    const controladoPFRaw     = row.getCell(col('controlado p. f'))?.text;
+    const incompatibilidadesRaw = row.getCell(col('incompatibilidades'))?.text;
+    const armarioRaw           = row.getCell(col('armário sugerido'))?.text;
+    const validadeRaw          = row.getCell(col('validade'))?.value;
+    const situacaoRaw          = row.getCell(col('situação'))?.text;
+    const localAtualRaw        = row.getCell(col('local atual'))?.text;
+
+    if (!name) {
+      errors.push(`Linha ${rowNumber}: nome ausente`);
+      return;
+    }
+
+    const situacao = normalizeSituacao(situacaoRaw);
+
+    if (situacao === 'finalizado') {
+      finalizados.push({
+        name,
+        cas,
+        situacaoOriginal: situacaoRaw?.trim() || null,
+        linha: rowNumber
+      });
+      return;
+    }
+
+    if (situacaoRaw && !situacao) {
+      errors.push(`Linha ${rowNumber}: situação não reconhecida ("${situacaoRaw}")`);
+      return;
+    }
+
+    const expiry = normalizeDateFromCell(validadeRaw);
+    const item = {
+      name,
+      cas,
+      controladoPF:       normalizeControladoPF(controladoPFRaw),
+      incompatibilidades: incompatibilidadesRaw?.trim() || null,
+      armario:            normalizeArmario(armarioRaw),
+      situacao:           situacao || null,
+      localAtual:         localAtualRaw?.trim() || null,
+      quantity:           null,          // planilha oficial não tem quantidade
+      unit:               'un',
+      expiry,
+      arrival:            null,
+      numeroOriginal:     numeroOriginalRaw ? Number(numeroOriginalRaw) : null
+    };
+
+    if (item.quantity === null) {
+      warnings.push(`Linha ${rowNumber} (${name}): sem quantidade na planilha — completar manualmente após o import`);
+    }
+    if (!expiry) {
+      warnings.push(`Linha ${rowNumber} (${name}): sem data de validade`);
+    }
+
+    valid.push(item);
+  });
+
+  return { valid, finalizados, warnings, errors };
+}
+
 async function generateTemplate() {
   const workbook = new ExcelJS.Workbook();
   const sheet    = workbook.addWorksheet('Reagentes');
@@ -107,12 +247,18 @@ async function generateExport(data) {
   const sheet    = workbook.addWorksheet('Reagentes');
 
   sheet.columns = [
-    { header: 'Nº',       key: 'num',      width: 8  },
-    { header: 'Nome',     key: 'nome',     width: 30 },
-    { header: 'Qtd',      key: 'qtd',      width: 10 },
-    { header: 'Unidade',  key: 'unidade',  width: 12 },
-    { header: 'Validade', key: 'validade', width: 16 },
-    { header: 'Chegada',  key: 'chegada',  width: 16 },
+    { header: 'Nº',                key: 'num',                width: 8  },
+    { header: 'Nome',              key: 'nome',               width: 28 },
+    { header: 'C.A.S',             key: 'cas',                width: 14 },
+    { header: 'Controlado P.F',    key: 'controladoPF',       width: 14 },
+    { header: 'Incompatibilidades',key: 'incompatibilidades', width: 24 },
+    { header: 'Armário',           key: 'armario',            width: 18 },
+    { header: 'Qtd',               key: 'qtd',                width: 10 },
+    { header: 'Unidade',           key: 'unidade',            width: 10 },
+    { header: 'Validade',          key: 'validade',           width: 14 },
+    { header: 'Chegada',           key: 'chegada',            width: 14 },
+    { header: 'Situação',          key: 'situacao',           width: 12 },
+    { header: 'Local Atual',       key: 'localAtual',         width: 18 },
   ];
 
   const headerRow = sheet.getRow(1);
@@ -125,8 +271,11 @@ async function generateExport(data) {
 
   for (const group of data) {
     const groupRow = sheet.addRow({
-      num:  group.index,
-      nome: group.name.toUpperCase(),
+      num:                group.index,
+      nome:               group.name.toUpperCase(),
+      cas:                group.cas || '',
+      controladoPF:       group.controladoPF ? 'SIM' : '',
+      incompatibilidades: group.incompatibilidades || '',
     });
     groupRow.eachCell(cell => {
       cell.font = { bold: true };
@@ -135,12 +284,15 @@ async function generateExport(data) {
 
     for (const pkg of group.packages) {
       const pkgRow = sheet.addRow({
-        num:      pkg.subIndex,
-        nome:     group.name,
-        qtd:      pkg.quantity,
-        unidade:  pkg.unit    || '',
-        validade: pkg.expiry  || '',
-        chegada:  pkg.arrival || '',
+        num:        pkg.subIndex,
+        nome:       group.name,
+        qtd:        pkg.quantity,
+        unidade:    pkg.unit       || '',
+        validade:   pkg.expiry     || '',
+        chegada:    pkg.arrival    || '',
+        armario:    pkg.armario    || '',
+        situacao:   pkg.situacao   || '',
+        localAtual: pkg.localAtual || '',
       });
 
       const now  = new Date(); now.setHours(0,0,0,0);
@@ -164,4 +316,12 @@ async function generateExport(data) {
   return workbook;
 }
 
-module.exports = { parseXLSX, generateTemplate, generateExport };
+module.exports = {
+  parseXLSX,
+  parseOrganizado,
+  generateTemplate,
+  generateExport,
+  normalizeArmario,
+  normalizeControladoPF,
+  normalizeSituacao
+};
