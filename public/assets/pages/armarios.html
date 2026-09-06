@@ -1,0 +1,29 @@
+<!-- public/assets/pages/armarios.html -->
+<div id="page-armarios">
+
+  <div style="display:flex;align-items:center;gap:12px;
+              padding:16px;background:var(--white);
+              border-bottom:1px solid var(--card-bg);">
+    <button id="arm-back"
+            style="font-size:1.4rem;color:var(--text);line-height:1;
+                   background:none;border:none;cursor:pointer;">←</button>
+    <p style="font-size:1rem;font-weight:700;">Armários</p>
+  </div>
+
+  <div style="padding:16px;">
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px;">
+      <div class="form-group" style="flex:1;margin-bottom:0;">
+        <label for="arm-nome">Novo armário</label>
+        <input type="text" id="arm-nome" placeholder="ex: Armário 3" autocomplete="off">
+      </div>
+      <button class="btn-primary" id="arm-add" style="width:auto;padding:0 20px;height:44px;flex-shrink:0;">
+        Adicionar
+      </button>
+    </div>
+
+    <p id="arm-feedback" style="text-align:center;margin:0 0 16px;
+       font-size:0.85rem;color:var(--green);min-height:20px;"></p>
+
+    <div id="arm-list"></div>
+  </div>
+</div>
