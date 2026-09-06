@@ -2,10 +2,15 @@ const { getDB } = require('../db/connection');
 
 // Ações possíveis
 const ACTIONS = {
-  ADD:     'add',
-  REMOVE:  'remove',
-  IMPORT:  'import',
-  RESTORE: 'restore'
+  ADD:         'add',
+  REMOVE:      'remove',
+  IMPORT:      'import',
+  RESTORE:     'restore',
+  CONSUME:     'consume',
+  QUEUE:       'queue',
+  UPDATE_SUB:  'update-details',
+  UPDATE_PKG:  'update-package',
+  RENUMBER:    'renumber'
 };
 
 async function record(userId, username, action, detail, sessionId, fingerprint) {
