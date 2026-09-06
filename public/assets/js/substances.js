@@ -32,14 +32,17 @@ window.__page = (() => {
     const data = getData();
     let total = 0, soon = 0, expired = 0;
     const recent = [];
+    const byStatus = { total: [], soon: [], expired: [] };
 
     for (const g of data) {
       for (const p of g.packages) {
         total++;
         const s = expiryStatus(p.expiry);
-        if (s === 'soon')    soon++;
-        if (s === 'expired') expired++;
-        recent.push({ name: g.name, expiry: p.expiry, addedAt: p.addedAt });
+        const item = { name: g.name, subIndex: p.subIndex, expiry: p.expiry, addedAt: p.addedAt };
+        byStatus.total.push(item);
+        if (s === 'soon')    { soon++;    byStatus.soon.push(item); }
+        if (s === 'expired') { expired++; byStatus.expired.push(item); }
+        recent.push(item);
       }
     }
 
@@ -47,6 +50,8 @@ window.__page = (() => {
     if (el('ind-total'))   el('ind-total').textContent   = total;
     if (el('ind-soon'))    el('ind-soon').textContent    = soon;
     if (el('ind-expired')) el('ind-expired').textContent = expired;
+
+    bindHomeIndicators(byStatus);
 
     const recentList = document.getElementById('recent-list');
     if (recentList) {
@@ -63,13 +68,79 @@ window.__page = (() => {
                         border-bottom:1px solid var(--card-bg);">
               <span style="font-size:0.9rem;font-weight:500;">${r.name}</span>
               <span style="font-size:0.82rem;color:var(--muted);">
-                ${r.expiry?.slice(5).replace('-','/')}
+                ${window.formatDateBR(r.expiry)}
               </span>
             </div>`).join('');
     }
   }
 
+  const HOME_KIND_LABELS = { total: 'Todos os reagentes', soon: 'Vencendo em breve', expired: 'Vencidos' };
+
+  function bindHomeIndicators(byStatus) {
+    document.querySelectorAll('.home-ind').forEach(btn => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', () => openHomeDetail(btn.dataset.kind, byStatus));
+    });
+  }
+
+  function openHomeDetail(kind, byStatus) {
+    const modal = document.getElementById('home-detail-modal');
+    const title = document.getElementById('home-detail-title');
+    const list  = document.getElementById('home-detail-list');
+    const close = document.getElementById('home-detail-close');
+    if (!modal) return;
+
+    const items = byStatus[kind] || [];
+    title.textContent = `${HOME_KIND_LABELS[kind] || kind} (${items.length})`;
+
+    list.innerHTML = items.length === 0
+      ? `<div class="empty-state" style="padding:20px;">Nenhum reagente aqui.</div>`
+      : items
+          .sort((a, b) => new Date(a.expiry || '9999-12-31') - new Date(b.expiry || '9999-12-31'))
+          .map(i => `
+            <div style="display:flex;justify-content:space-between;align-items:center;
+                        padding:8px 0;border-bottom:1px solid var(--card-bg);">
+              <span style="font-size:0.9rem;font-weight:500;">${i.name}</span>
+              <span style="font-size:0.82rem;color:var(--muted);">
+                ${i.expiry ? window.formatDateBR(i.expiry) : '—'}
+              </span>
+            </div>`).join('');
+
+    modal.hidden = false;
+    const clone = el => { const n = el.cloneNode(true); el.replaceWith(n); return n; };
+    clone(close).addEventListener('click', () => { modal.hidden = true; });
+  }
+
   // ─── SUBSTANCES ──────────────────────────────────────
+
+  function applyFilter(data, filterType) {
+    let result = [...data];
+    switch (filterType) {
+      case 'recent':
+        result.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        break;
+      case 'oldest':
+        result.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+        break;
+      case 'expiring':
+        result.sort((a, b) =>
+          new Date(a.packages[0]?.expiry || '9999-12-31') -
+          new Date(b.packages[0]?.expiry || '9999-12-31')
+        );
+        break;
+      case 'pf':
+        result = result.filter(g => g.controladoPF);
+        break;
+      case 'aberto':
+        result = result.filter(g => g.packages.some(p => p.situacao === 'aberto'));
+        break;
+      case 'fechado':
+        result = result.filter(g => g.packages.some(p => p.situacao === 'fechado'));
+        break;
+    }
+    return result;
+  }
 
   function renderSubstances(filter = '') {
     const list = document.getElementById('substances-list');
@@ -77,25 +148,34 @@ window.__page = (() => {
 
     const term = filter.toLowerCase().trim()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const filterType = document.getElementById('filter-select')?.value || '';
 
-    const data     = getData();
-    const filtered = term
-      ? data.filter(g => {
-          const n = g.name.toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          return n.includes(term);
-        })
-      : data;
+    let data = getData();
 
-    if (filtered.length === 0) {
+    if (term) {
+      data = data.filter(g => {
+        const n = g.name.toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const casMatch = g.cas ? g.cas.toLowerCase().includes(term) : false;
+        const numMatch = g.index != null ? g.index.toString() === filter.trim() : false;
+        const tagMatch = (g.tags || []).some(t => t.toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term));
+        return n.includes(term) || casMatch || numMatch || tagMatch;
+      });
+    }
+
+    data = applyFilter(data, filterType);
+
+    if (data.length === 0) {
       list.innerHTML = `<div class="empty-state">
-        ${term ? 'Nada encontrado.'
-               : 'Nada cadastrado.'}
+        ${term ? 'Nada encontrado.' : 'Nada cadastrado.'}
       </div>`;
+      bindSearch();
+      bindFilter();
       return;
     }
 
-    list.innerHTML = filtered.map(group => {
+    list.innerHTML = data.map(group => {
       const firstPkg = group.packages[0];
       const totalQty = group.packages.reduce((s, p) => s + p.quantity, 0);
       const unit     = firstPkg?.unit || '';
@@ -112,7 +192,20 @@ window.__page = (() => {
               </span>
               <p style="font-size:1rem;font-weight:700;margin-top:1px;">
                 ${group.name}
+                ${group.controladoPF
+                  ? `<span style="font-size:0.65rem;background:var(--red);color:#fff;
+                             padding:2px 6px;border-radius:4px;margin-left:6px;
+                             vertical-align:middle;">PF</span>`
+                  : ''}
               </p>
+              ${group.cas
+                ? `<p style="font-size:0.72rem;color:var(--muted);margin-top:2px;">CAS: ${group.cas}</p>`
+                : ''}
+              ${(group.tags || []).length
+                ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+                     ${group.tags.map(t => `<span class="badge tag">${t}</span>`).join('')}
+                   </div>`
+                : ''}
             </div>
             <button class="btn-options" data-name="${group.name}"
                     style="width:34px;height:34px;display:flex;flex-direction:column;
@@ -135,7 +228,7 @@ window.__page = (() => {
               </p>
               <p style="font-size:0.82rem;color:var(--muted);margin-top:2px;">
                 Mais próx. de vencer:
-                <strong style="color:var(--text);">${firstPkg?.expiry || '—'}</strong>
+                <strong style="color:var(--text);">${firstPkg?.expiry ? window.formatDateBR(firstPkg.expiry) : '—'}</strong>
               </p>
             </div>
             <span class="badge ${status}">${statusLabel(status)}</span>
@@ -148,19 +241,82 @@ window.__page = (() => {
     });
 
     bindSearch();
+    bindFilter();
   }
 
   function bindSearch() {
-    const btn   = document.getElementById('btn-search');
-    const input = document.getElementById('search-input');
+    const btn     = document.getElementById('btn-search');
+    const input   = document.getElementById('search-input');
+    const clearEl = document.getElementById('search-clear');
+    const wrap    = input?.closest('.search-wrap');
+    const sugg    = document.getElementById('search-tags-suggestions');
     if (!btn || btn.dataset.bound) return;
     btn.dataset.bound = '1';
+
+    const toggleClear = () => wrap?.classList.toggle('has-text', !!input.value);
+
     btn.addEventListener('click', () => renderSubstances(input.value));
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter') renderSubstances(input.value);
     });
-    input.addEventListener('input', e => {
-      if (!e.target.value) renderSubstances('');
+    input.addEventListener('input', () => {
+      toggleClear();
+      if (!input.value) renderSubstances('');
+      updateSearchTagSuggestions(input, sugg);
+    });
+    clearEl?.addEventListener('click', () => {
+      input.value = '';
+      toggleClear();
+      if (sugg) sugg.style.display = 'none';
+      input.focus();
+      renderSubstances('');
+    });
+    toggleClear();
+
+    document.addEventListener('click', e => {
+      if (sugg && !input.contains(e.target) && !sugg.contains(e.target)) {
+        sugg.style.display = 'none';
+      }
+    });
+  }
+
+  // Sugere tags já cadastradas conforme o usuário digita no campo de busca,
+  // igual ao autopreenchimento já existente no formulário de criação.
+  function updateSearchTagSuggestions(input, sugg) {
+    if (!sugg) return;
+    const term = input.value.trim().toLowerCase();
+    if (!term) { sugg.style.display = 'none'; return; }
+
+    const allTags = new Set();
+    getData().forEach(g => (g.tags || []).forEach(t => allTags.add(t)));
+
+    const matches = [...allTags]
+      .filter(t => t.toLowerCase().includes(term))
+      .slice(0, 5);
+
+    if (!matches.length) { sugg.style.display = 'none'; return; }
+
+    sugg.style.display = 'block';
+    sugg.innerHTML = matches.map(t => `
+      <div style="padding:10px 12px;cursor:pointer;
+                  border-bottom:1px solid #eee;font-size:0.9rem;"
+           data-tag="${t}">${t}</div>`).join('');
+
+    sugg.querySelectorAll('[data-tag]').forEach(el => {
+      el.addEventListener('click', () => {
+        input.value = el.dataset.tag;
+        sugg.style.display = 'none';
+        renderSubstances(input.value);
+      });
+    });
+  }
+
+  function bindFilter() {
+    const select = document.getElementById('filter-select');
+    if (!select || select.dataset.bound) return;
+    select.dataset.bound = '1';
+    select.addEventListener('change', () => {
+      renderSubstances(document.getElementById('search-input')?.value || '');
     });
   }
 
@@ -172,7 +328,6 @@ function openOptions(groupName) {
   title.textContent = groupName;
   modal.hidden = false;
 
-  // Clona só se o elemento existir
   const clone = el => {
     if (!el) return null;
     const n = el.cloneNode(true);
@@ -182,6 +337,8 @@ function openOptions(groupName) {
 
   const newAdd     = clone(document.getElementById('opt-edit'));
   const newEditPkg = clone(document.getElementById('opt-edit-pkg'));
+  const newEditSub = clone(document.getElementById('opt-edit-sub'));
+  const newConsumo = clone(document.getElementById('opt-consumo'));
   const newDel     = clone(document.getElementById('opt-delete'));
   const newCan     = clone(document.getElementById('opt-cancel'));
 
@@ -195,9 +352,140 @@ function openOptions(groupName) {
     openEditPkgModal(groupName);
   });
 
+  newEditSub?.addEventListener('click', () => {
+    modal.hidden = true;
+    openEditSubstanceModal(groupName);
+  });
+
+  newConsumo?.addEventListener('click', () => {
+    modal.hidden = true;
+    openConsumoModal(groupName);
+  });
+
   newDel?.addEventListener('click', () => {
     modal.hidden = true;
     openDeleteModal(groupName);
+  });
+
+  newCan?.addEventListener('click', () => { modal.hidden = true; });
+}
+
+function computeRemaining(pkg) {
+  const used = (pkg.consumption || []).reduce((sum, c) => sum + (c.amount || 0), 0);
+  return Math.max(0, pkg.quantity - used);
+}
+
+function openConsumoModal(groupName) {
+  const modal  = document.getElementById('consumo-modal');
+  const title  = document.getElementById('consumo-modal-title');
+  const list   = document.getElementById('consumo-pkg-list');
+  const form   = document.getElementById('consumo-form');
+  const btnOk  = document.getElementById('cons-confirm');
+  const btnCan = document.getElementById('cons-cancel');
+  if (!modal) return;
+
+  const group = getData().find(g => g.name === groupName);
+  if (!group) return;
+
+  title.textContent = `Registrar uso — ${groupName}`;
+  form.hidden  = true;
+  modal.hidden = false;
+
+  // Clona ANTES de ligar os itens da lista: os itens abaixo escondem/mostram
+  // o botão de confirmar ao selecionar um pacote, e precisam mexer no nó que
+  // de fato fica no DOM. Clonar depois (como estava) troca btnOk por um nó
+  // novo e deixa a referência dos itens apontando pro nó antigo e órfão —
+  // btnOk.hidden = false nunca aparecia na tela.
+  const clone = el => {
+    if (!el) return null;
+    const n = el.cloneNode(true);
+    el.replaceWith(n);
+    return n;
+  };
+  const newOk  = clone(btnOk);
+  const newCan = clone(btnCan);
+  newOk.hidden = true;
+
+  let selectedPkg = null;
+
+  list.innerHTML = group.packages.map(p => `
+    <div class="pkg-select-item" data-sub="${p.subIndex}"
+         style="display:flex;align-items:center;justify-content:space-between;
+                padding:10px 12px;background:var(--card-bg);border-radius:8px;
+                margin-bottom:8px;cursor:pointer;border:2px solid transparent;
+                transition:border-color 0.15s;">
+      <div>
+        <span style="font-size:0.75rem;color:var(--muted);font-weight:600;">
+          ${p.subIndex}
+        </span>
+        <p style="font-size:0.85rem;">
+          Val: ${window.formatDateBR(p.expiry)} | Restante: ${computeRemaining(p)} ${p.unit || ''}
+        </p>
+      </div>
+      <span style="color:var(--green);font-size:0.8rem;font-weight:700;">
+        selecionar
+      </span>
+    </div>`).join('');
+
+  list.querySelectorAll('.pkg-select-item').forEach(item => {
+    item.addEventListener('click', () => {
+      list.querySelectorAll('.pkg-select-item').forEach(i => {
+        i.style.borderColor = 'transparent';
+      });
+      item.style.borderColor = 'var(--green)';
+
+      const sub = item.dataset.sub;
+      selectedPkg = group.packages.find(p => p.subIndex === sub);
+
+      document.getElementById('consumo-restante').textContent =
+        `${computeRemaining(selectedPkg)} ${selectedPkg.unit || ''}`;
+      document.getElementById('cons-amount').value = '';
+      document.getElementById('cons-note').value   = '';
+      document.getElementById('cons-queue').checked = selectedPkg.queueStatus === 'solicitado';
+
+      form.hidden  = false;
+      newOk.hidden = false;
+    });
+  });
+
+  newOk?.addEventListener('click', async () => {
+    if (!selectedPkg) return;
+
+    const amount = parseFloat(document.getElementById('cons-amount')?.value);
+    const note   = document.getElementById('cons-note')?.value.trim() || null;
+    const wantsQueue = document.getElementById('cons-queue')?.checked || false;
+
+    if (isNaN(amount) || amount <= 0) {
+      window.showToast('Informe a quantidade usada.');
+      return;
+    }
+
+    newOk.disabled = true;
+    try {
+      window.__substancesData = await API.post(
+        `/substances/${selectedPkg.subIndex}/consumption`,
+        { amount, note }
+      );
+
+      const desiredStatus = wantsQueue ? 'solicitado' : null;
+      if (desiredStatus !== (selectedPkg.queueStatus || null)) {
+        window.__substancesData = await API.patch(
+          `/substances/${selectedPkg.subIndex}/queue`,
+          { status: desiredStatus }
+        );
+      }
+
+      modal.hidden = true;
+      renderSubstances(document.getElementById('search-input')?.value || '');
+      window.showToast('Uso registrado!');
+    } catch (err) {
+      window.showToast(`Erro: ${err.message}`);
+    } finally {
+      // cloneNode copia o atributo disabled — sem isto, um segundo "Registrar
+      // uso" (ou qualquer ação seguinte que reabra este modal) herdaria o
+      // botão desabilitado do sucesso anterior e o clique não faria nada.
+      newOk.disabled = false;
+    }
   });
 
   newCan?.addEventListener('click', () => { modal.hidden = true; });
@@ -248,6 +536,7 @@ function openQuickAdd(groupName) {
       window.showToast('Adicionado com sucesso!');
     } catch (err) {
       window.showToast(`Erro: ${err.message}`);
+    } finally {
       newOk.disabled = false;
     }
   });
@@ -255,7 +544,7 @@ function openQuickAdd(groupName) {
   newNo?.addEventListener('click', () => { modal.hidden = true; });
 }
 
-function openEditPkgModal(groupName) {
+async function openEditPkgModal(groupName) {
   const modal  = document.getElementById('edit-pkg-modal');
   const title  = document.getElementById('edit-pkg-title');
   const list   = document.getElementById('edit-pkg-list');
@@ -267,10 +556,24 @@ function openEditPkgModal(groupName) {
   const group = getData().find(g => g.name === groupName);
   if (!group) return;
 
-  title.textContent = groupName;
+  title.textContent = `Editar embalagem — ${groupName}`;
   form.hidden  = true;
-  btnOk.hidden = true;
   modal.hidden = false;
+
+  await populateArmarioSelect('epf-armario');
+
+  // Clona ANTES de ligar os itens da lista (mesmo motivo do openConsumoModal
+  // acima): os itens escondem/mostram o botão de salvar, e precisam mexer no
+  // nó que de fato está no DOM, não num que já foi substituído pelo clone.
+  const clone = el => {
+    if (!el) return null;
+    const n = el.cloneNode(true);
+    el.replaceWith(n);
+    return n;
+  };
+  const newOk  = clone(btnOk);
+  const newCan = clone(btnCan);
+  newOk.hidden = true;
 
   let selectedPkg = null;
 
@@ -285,7 +588,7 @@ function openEditPkgModal(groupName) {
           ${p.subIndex}
         </span>
         <p style="font-size:0.85rem;">
-          Val: ${p.expiry} | Qtd: ${p.quantity} ${p.unit || ''}
+          Val: ${window.formatDateBR(p.expiry)} | Qtd: ${p.quantity} ${p.unit || ''}
         </p>
       </div>
       <span style="color:var(--green);font-size:0.8rem;font-weight:700;">
@@ -303,15 +606,73 @@ function openEditPkgModal(groupName) {
       const sub = item.dataset.sub;
       selectedPkg = group.packages.find(p => p.subIndex === sub);
 
-      document.getElementById('epf-qty').value    = selectedPkg.quantity;
-      document.getElementById('epf-expiry').value  = selectedPkg.expiry;
-      document.getElementById('epf-unit').value    = selectedPkg.unit || 'un';
-      document.getElementById('epf-arrival').value = selectedPkg.arrival || '';
+      document.getElementById('epf-qty').value      = selectedPkg.quantity;
+      document.getElementById('epf-expiry').value   = selectedPkg.expiry;
+      document.getElementById('epf-unit').value     = selectedPkg.unit || 'un';
+      document.getElementById('epf-arrival').value  = selectedPkg.arrival || '';
+      document.getElementById('epf-armario').value  = selectedPkg.armario || '';
+      document.getElementById('epf-situacao').value = selectedPkg.situacao || '';
+      document.getElementById('epf-local').value    = selectedPkg.localAtual || '';
+      document.getElementById('epf-marca').value    = selectedPkg.marca || '';
 
       form.hidden  = false;
-      btnOk.hidden = false;
+      newOk.hidden = false;
     });
   });
+
+  newOk?.addEventListener('click', async () => {
+    if (!selectedPkg) return;
+
+    const qty        = parseFloat(document.getElementById('epf-qty')?.value);
+    const expiry      = document.getElementById('epf-expiry')?.value;
+    const unit        = document.getElementById('epf-unit')?.value || 'un';
+    const arrival     = document.getElementById('epf-arrival')?.value || null;
+    const armario     = document.getElementById('epf-armario')?.value || null;
+    const situacao    = document.getElementById('epf-situacao')?.value || null;
+    const localAtual  = document.getElementById('epf-local')?.value.trim() || null;
+    const marca       = document.getElementById('epf-marca')?.value.trim() || null;
+
+    if (!expiry || isNaN(qty) || qty <= 0) {
+      window.showToast('Preencha quantidade e validade.');
+      return;
+    }
+
+    newOk.disabled = true;
+    try {
+      window.__substancesData = await API.patch(`/substances/${selectedPkg.subIndex}/package`, {
+        quantity: qty, expiry, unit, arrival, armario, situacao, localAtual, marca
+      });
+      modal.hidden = true;
+      renderSubstances(document.getElementById('search-input')?.value || '');
+      window.showToast('Embalagem atualizada!');
+    } catch (err) {
+      window.showToast(`Erro: ${err.message}`);
+    } finally {
+      newOk.disabled = false;
+    }
+  });
+
+  newCan?.addEventListener('click', () => { modal.hidden = true; });
+}
+
+function openEditSubstanceModal(groupName) {
+  const modal  = document.getElementById('edit-sub-modal');
+  const title  = document.getElementById('edit-sub-title');
+  const btnOk  = document.getElementById('es-confirm');
+  const btnCan = document.getElementById('es-cancel');
+  if (!modal) return;
+
+  const group = getData().find(g => g.name === groupName);
+  if (!group) return;
+
+  title.textContent = `Editar informações gerais — ${groupName}`;
+  prepareNumberField('es-number', 'es-number-unlock', group.index);
+  document.getElementById('es-cas').value       = group.cas || '';
+  document.getElementById('es-pf').checked      = !!group.controladoPF;
+  document.getElementById('es-tags').value      = (group.tags || []).join(', ');
+  document.getElementById('es-obs').value       = group.observacoes || '';
+  document.getElementById('es-incompat').value  = group.incompatibilidades || '';
+  modal.hidden = false;
 
   const clone = el => {
     if (!el) return null;
@@ -323,29 +684,35 @@ function openEditPkgModal(groupName) {
   const newCan = clone(btnCan);
 
   newOk?.addEventListener('click', async () => {
-    if (!selectedPkg) return;
+    const cas          = document.getElementById('es-cas')?.value.trim() || null;
+    const controladoPF = document.getElementById('es-pf')?.checked || false;
+    const tagsRaw      = document.getElementById('es-tags')?.value.trim();
+    const tags         = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+    const observacoes  = document.getElementById('es-obs')?.value.trim() || null;
+    const incompatibilidades = document.getElementById('es-incompat')?.value.trim() || null;
 
-    const qty    = parseFloat(document.getElementById('epf-qty')?.value);
-    const expiry = document.getElementById('epf-expiry')?.value;
-    const unit   = document.getElementById('epf-unit')?.value || 'un';
-    const arrival = document.getElementById('epf-arrival')?.value || null;
-
-    if (!expiry || isNaN(qty) || qty <= 0) {
-      window.showToast('Preencha quantidade e validade.');
-      return;
-    }
+    const numberUnlock = document.getElementById('es-number-unlock');
+    const desiredNumber = numberUnlock?.checked
+      ? parseInt(document.getElementById('es-number')?.value, 10)
+      : null;
 
     newOk.disabled = true;
     try {
-      await API.delete(`/substances/${selectedPkg.subIndex}`);
-      window.__substancesData = await API.post('/substances', {
-        name: groupName, quantity: qty, expiry, unit, arrival
-      });
+      window.__substancesData = await API.patch(
+        `/substances/${encodeURIComponent(group.nameLower)}/details`,
+        { cas, controladoPF, tags, observacoes, incompatibilidades }
+      );
+
+      if (desiredNumber && desiredNumber !== group.index) {
+        await applyGroupNumber(group.nameLower, desiredNumber);
+      }
+
       modal.hidden = true;
       renderSubstances(document.getElementById('search-input')?.value || '');
-      window.showToast('Embalagem atualizada!');
+      window.showToast('Substância atualizada!');
     } catch (err) {
       window.showToast(`Erro: ${err.message}`);
+    } finally {
       newOk.disabled = false;
     }
   });
@@ -369,8 +736,8 @@ function openEditPkgModal(groupName) {
         <input type="radio" name="del-pkg" value="${p.subIndex}"
                style="width:16px;height:16px;">
         <span style="font-size:0.85rem;">
-          ${p.subIndex} — Val: ${p.expiry} | Qtd: ${p.quantity} ${p.unit || ''}
-          ${p.arrival ? `| Chegada: ${p.arrival}` : ''}
+          ${p.subIndex} — Val: ${window.formatDateBR(p.expiry)} | Qtd: ${p.quantity} ${p.unit || ''}
+          ${p.arrival ? `| Chegada: ${window.formatDateBR(p.arrival)}` : ''}
         </span>
       </label>`).join('') +
       `<label style="display:flex;align-items:center;gap:8px;
@@ -410,6 +777,11 @@ function openEditPkgModal(groupName) {
         window.showToast('Removido com sucesso.');
       } catch (err) {
         window.showToast(`Erro: ${err.message}`);
+      } finally {
+        // Causa raiz do "só apaga uma vez por visita à aba": cloneNode copia
+        // o atributo disabled do botão anterior. Sem resetar aqui no sucesso
+        // também (e não só no catch), a segunda exclusão clonava um botão
+        // já desabilitado pra sempre e o clique não tinha efeito nenhum.
         newOk.disabled = false;
       }
     });
@@ -441,18 +813,15 @@ function openEditPkgModal(groupName) {
     }
 
 document.getElementById('edit-btn-criar')
-  ?.addEventListener('click', () => showPanel(panelCriar));
+  ?.addEventListener('click', () => {
+    showPanel(panelCriar);
+    prepareNumberField('c-number', 'c-number-unlock');
+  });
 
 document.getElementById('edit-btn-editar')
   ?.addEventListener('click', async () => {
-    // Vai pra aba substâncias e abre painel editar
     await window.__appRouter.loadPage('substances');
-    // Aguarda o DOM carregar e abre o painel
     setTimeout(() => {
-      const panelEditar = document.getElementById('panel-editar');
-      const pageEdit    = document.getElementById('page-edit');
-      // Como trocou de página, precisamos injetar o painel na substances
-      // Solução: abre modal de busca direto
       window.__substancesEditMode = 'edit';
       window.showToast('Busque a substância para editar.');
     }, 100);
@@ -507,11 +876,112 @@ document.getElementById('edit-btn-deletar')
       }
     });
 
+    // Autopreenchimento de tags — sugere tags já usadas noutros reagentes
+    const tagsInput = document.getElementById('c-tags');
+    const tagsSugg  = document.getElementById('c-tags-suggestions');
+
+    tagsInput?.addEventListener('input', () => {
+      if (!tagsSugg) return;
+      const parts    = tagsInput.value.split(',');
+      const current  = parts[parts.length - 1].trim().toLowerCase();
+      if (!current) { tagsSugg.style.display = 'none'; return; }
+
+      const allTags = new Set();
+      getData().forEach(g => (g.tags || []).forEach(t => allTags.add(t)));
+
+      const matches = [...allTags]
+        .filter(t => t.toLowerCase().includes(current) &&
+                     !parts.slice(0, -1).map(p => p.trim().toLowerCase()).includes(t.toLowerCase()))
+        .slice(0, 5);
+
+      if (!matches.length) { tagsSugg.style.display = 'none'; return; }
+
+      tagsSugg.style.display = 'block';
+      tagsSugg.innerHTML = matches.map(t => `
+        <div style="padding:10px 12px;cursor:pointer;
+                    border-bottom:1px solid #eee;font-size:0.9rem;"
+             data-tag="${t}">${t}</div>`).join('');
+
+      tagsSugg.querySelectorAll('[data-tag]').forEach(el => {
+        el.addEventListener('click', () => {
+          parts[parts.length - 1] = ` ${el.dataset.tag}`;
+          tagsInput.value = parts.join(',').replace(/^ /, '') + ', ';
+          tagsSugg.style.display = 'none';
+          tagsInput.focus();
+        });
+      });
+    });
+
+    document.addEventListener('click', e => {
+      if (!tagsInput?.contains(e.target) && !tagsSugg?.contains(e.target)) {
+        if (tagsSugg) tagsSugg.style.display = 'none';
+      }
+    });
+
     document.getElementById('btn-criar-confirmar')
       ?.addEventListener('click', handleCriar);
 
     bindPanelSearch('edit-search',   'edit-search-btn',   'edit-results',   'edit');
     bindPanelSearch('delete-search', 'delete-search-btn', 'delete-results', 'delete');
+
+    populateArmarioSelect();
+  }
+
+  // Preenche o campo de número travável com o próximo número disponível
+  // (desabilitado por padrão) e liga o checkbox "editar manualmente" que o
+  // destrava. numberId/unlockId permitem reutilizar no painel de criação
+  // (c-number) e no modal de editar substância (es-number).
+  function prepareNumberField(numberId, unlockId, currentValue = null) {
+    const numberInput = document.getElementById(numberId);
+    const unlock       = document.getElementById(unlockId);
+    if (!numberInput || !unlock) return;
+
+    const nextFree = getData().reduce((max, g) => Math.max(max, g.index || 0), 0) + 1;
+    numberInput.value    = currentValue ?? nextFree;
+    numberInput.disabled = true;
+    unlock.checked        = false;
+
+    if (!unlock.dataset.bound) {
+      unlock.dataset.bound = '1';
+      unlock.addEventListener('change', () => {
+        numberInput.disabled = !unlock.checked;
+      });
+    }
+  }
+
+  // Aplica o número escolhido a uma substância já criada, tratando o
+  // conflito 409 (número já ocupado por outra) com uma pergunta de
+  // confirmação antes de reenviar com force:true.
+  async function applyGroupNumber(nameLower, desiredNumber) {
+    try {
+      window.__substancesData = await API.patch(
+        `/substances/${encodeURIComponent(nameLower)}/number`,
+        { number: desiredNumber }
+      );
+    } catch (err) {
+      const conflict = err.conflict;
+      const ocupante = conflict?.name || 'outro reagente';
+      const confirmed = await window.confirmModal(
+        `"${ocupante}" já ocupa o número ${desiredNumber}. Mover ele para o próximo número livre?`,
+        { confirmLabel: 'Mover e confirmar' }
+      );
+      if (!confirmed) return;
+      window.__substancesData = await API.patch(
+        `/substances/${encodeURIComponent(nameLower)}/number`,
+        { number: desiredNumber, force: true }
+      );
+    }
+  }
+
+  async function populateArmarioSelect(selectId = 'c-armario') {
+    const select = document.getElementById(selectId);
+    if (!select || select.dataset.loaded) return;
+    select.dataset.loaded = '1';
+    try {
+      const armarios = await API.get('/armarios');
+      select.innerHTML = '<option value="">—</option>' +
+        armarios.map(a => `<option value="${a.nome}">${a.nome}</option>`).join('');
+    } catch { /* select fica só com "—" se falhar */ }
   }
 
   async function handleCriar() {
@@ -520,8 +990,20 @@ document.getElementById('edit-btn-deletar')
     const unit    = document.getElementById('c-unit')?.value || 'un';
     const expiry  = document.getElementById('c-expiry')?.value;
     const arrival = document.getElementById('c-arrival')?.value;
-    const fb      = document.getElementById('criar-feedback');
-    const btn     = document.getElementById('btn-criar-confirmar');
+
+    const cas          = document.getElementById('c-cas')?.value.trim() || null;
+    const controladoPF = document.getElementById('c-pf')?.checked || false;
+    const armario       = document.getElementById('c-armario')?.value || null;
+    const situacao       = document.getElementById('c-situacao')?.value || null;
+    const localAtual     = document.getElementById('c-local')?.value.trim() || null;
+    const marca           = document.getElementById('c-marca')?.value.trim() || null;
+    const tagsRaw          = document.getElementById('c-tags')?.value.trim();
+    const tags               = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+    const observacoes         = document.getElementById('c-obs')?.value.trim() || null;
+    const incompatibilidades  = document.getElementById('c-incompat')?.value.trim() || null;
+
+    const fb  = document.getElementById('criar-feedback');
+    const btn = document.getElementById('btn-criar-confirmar');
 
     if (!name || !expiry || isNaN(qty) || qty <= 0) {
       fb.style.color = 'var(--red)';
@@ -529,17 +1011,34 @@ document.getElementById('edit-btn-deletar')
       return;
     }
 
+    const numberUnlock = document.getElementById('c-number-unlock');
+    const desiredNumber = numberUnlock?.checked
+      ? parseInt(document.getElementById('c-number')?.value, 10)
+      : null;
+
     btn.disabled = true;
     try {
       window.__substancesData = await API.post('/substances', {
-        name, quantity: qty, unit, expiry, arrival
+        name, quantity: qty, unit, expiry, arrival,
+        cas, controladoPF, armario, situacao, localAtual, marca, tags, observacoes,
+        incompatibilidades
       });
+
+      if (desiredNumber) {
+        const created = getData().find(g => g.nameLower === name.toLowerCase().trim());
+        if (created && created.index !== desiredNumber) {
+          await applyGroupNumber(created.nameLower, desiredNumber);
+        }
+      }
+
       fb.style.color = 'var(--green)';
       fb.textContent = `"${name}" adicionado!`;
-      document.getElementById('c-name').value    = '';
-      document.getElementById('c-qty').value     = '';
-      document.getElementById('c-expiry').value  = '';
-      document.getElementById('c-arrival').value = '';
+      ['c-name','c-qty','c-expiry','c-arrival','c-cas','c-local','c-marca','c-tags','c-obs','c-incompat']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      const pf  = document.getElementById('c-pf');  if (pf)  pf.checked = false;
+      const arm = document.getElementById('c-armario'); if (arm) arm.value = '';
+      const sit = document.getElementById('c-situacao'); if (sit) sit.value = '';
+      prepareNumberField('c-number', 'c-number-unlock');
     } catch (err) {
       fb.style.color = 'var(--red)';
       fb.textContent = `Erro: ${err.message}`;
@@ -578,8 +1077,8 @@ document.getElementById('edit-btn-deletar')
               <div>
                 <span style="font-size:0.75rem;color:var(--muted);">${p.subIndex}</span>
                 <p style="font-size:0.85rem;">
-                  Val: ${p.expiry} | Qtd: ${p.quantity} ${p.unit || ''}
-                  ${p.arrival ? `| Chegada: ${p.arrival}` : ''}
+                  Val: ${window.formatDateBR(p.expiry)} | Qtd: ${p.quantity} ${p.unit || ''}
+                  ${p.arrival ? `| Chegada: ${window.formatDateBR(p.arrival)}` : ''}
                 </p>
               </div>
               ${mode === 'edit'
@@ -629,7 +1128,7 @@ document.getElementById('edit-btn-deletar')
   }
 
   async function confirmDeletePkg(subIndex, cb) {
-    if (!confirm('Você quer remover mesmo?')) return;
+    if (!await window.confirmModal('Você quer remover mesmo?', { confirmLabel: 'Remover' })) return;
     try {
       window.__substancesData = await API.delete(`/substances/${subIndex}`);
       window.showToast('Removida.');
@@ -640,7 +1139,7 @@ document.getElementById('edit-btn-deletar')
   }
 
   async function confirmDeleteAll(groupName, cb) {
-    if (!confirm(`Deletar TODOS os registros de "${groupName}"?`)) return;
+    if (!await window.confirmModal(`Deletar TODOS os registros de "${groupName}"?`, { confirmLabel: 'Deletar tudo' })) return;
     try {
       let g = getData().find(x => x.name === groupName);
       while (g && g.packages.length > 0) {
@@ -712,6 +1211,7 @@ document.getElementById('edit-btn-deletar')
       } catch (err) {
         fb.style.color = 'var(--red)';
         fb.textContent = `Erro: ${err.message}`;
+      } finally {
         newBtn.disabled = false;
       }
     });
@@ -720,13 +1220,18 @@ document.getElementById('edit-btn-deletar')
   // ─── CORE ────────────────────────────────────────────
 
   async function init(pageName, ctx) {
+    // Guardado globalmente porque onDataUpdate (disparado pelo polling a
+    // cada 5s, para atualizações de QUALQUER usuário) não recebe ctx de
+    // novo — sem isso, renderHome() cai no fallback "Visitante".
+    if (ctx) window.__userCtx = ctx;
+
     if (!window.__substancesData) {
       try {
         window.__substancesData = await API.get('/substances');
       } catch { /* ignora */ }
     }
 
-    if (pageName === 'home')       renderHome(ctx);
+    if (pageName === 'home')       renderHome(window.__userCtx);
     if (pageName === 'substances') renderSubstances();
     if (pageName === 'edit')       renderEdit();
   }
@@ -735,7 +1240,7 @@ document.getElementById('edit-btn-deletar')
     window.__substancesData = data;
     const isHome = !!document.getElementById('page-home');
     const isSubs = !!document.getElementById('page-substances');
-    if (isHome) renderHome();
+    if (isHome) renderHome(window.__userCtx);
     if (isSubs) renderSubstances(
       document.getElementById('search-input')?.value || ''
     );

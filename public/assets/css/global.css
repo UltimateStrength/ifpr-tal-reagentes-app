@@ -191,6 +191,26 @@ a { color: var(--green); text-decoration: none; }
   border-color: var(--green);
 }
 
+/* Grupo checkbox + label lado a lado (ex: "Controlado PF") — sem isso,
+   herda flex-direction:column de .form-group e a linha quebra. */
+.form-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--green);
+}
+
+.form-check label {
+  margin: 0;
+  flex: 1;
+}
+
 .btn-primary {
   display: block;
   width: 100%;
@@ -265,6 +285,8 @@ a { color: var(--green); text-decoration: none; }
   padding: 24px 20px;
   width: 100%;
   max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 .modal-title {
@@ -311,6 +333,43 @@ a { color: var(--green); text-decoration: none; }
 .badge.ok      { background: #d4edda; color: #1a6b2a; }
 .badge.soon    { background: #fff3cd; color: #7d5a00; }
 .badge.expired { background: #f8d7da; color: #8b1a20; }
+
+.badge.tag {
+  background: var(--card-bg);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── BUSCA COM BOTÃO DE LIMPAR ──────────────────────── */
+.search-wrap {
+  position: relative;
+  flex: 1;
+}
+
+.search-wrap input {
+  width: 100%;
+  padding-right: 34px;
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+  cursor: pointer;
+  display: none;
+}
+
+.search-wrap.has-text .search-clear { display: block; }
 
 /* ── EMPTY STATE ─────────────────────────────────────── */
 .empty-state {
