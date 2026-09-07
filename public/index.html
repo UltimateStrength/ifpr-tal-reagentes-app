@@ -13,6 +13,7 @@
   <style>
     [hidden] { display: none !important; }
   </style>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 
@@ -21,11 +22,13 @@
       <img src="assets/img/icons/logo.png" alt="Logo" id="login-logo">
       <p id="login-title">Confirme sua identidade:</p>
 
-      <label for="input-user">Usuario:</label>
-      <input type="text" id="input-user" autocomplete="username">
+      <label for="input-user">E-mail:</label>
+      <input type="email" id="input-user" autocomplete="email">
 
       <label for="input-pass">Senha:</label>
       <input type="password" id="input-pass" autocomplete="current-password">
+
+      <div id="turnstile-login-widget" class="cf-turnstile-wrap"></div>
 
       <button id="btn-login">Conectar-se</button>
       <p id="login-error" hidden>Usuário ou senha incorretos.</p>
@@ -46,6 +49,8 @@
 
       <label for="input-token" style="font-size: 1rem;">Token:</label>
       <input type="text" id="input-token" autocomplete="off" placeholder="ex: A5G6-BHR4">
+
+      <div id="turnstile-token-widget" class="cf-turnstile-wrap"></div>
 
       <button id="btn-token-login">Conectar-se</button>
       <p id="token-error" hidden>Token inválido ou expirado.</p>

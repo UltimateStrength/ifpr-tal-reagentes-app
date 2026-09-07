@@ -3,7 +3,17 @@ window.__page = (() => {
     return window.__substancesData || [];
   }
 
-  function getGreeting(name) {
+  function isBirthdayToday(birthDate) {
+    if (!birthDate) return false;
+    const m = /^\d{4}-(\d{2})-(\d{2})/.exec(birthDate);
+    if (!m) return false;
+    const today = new Date();
+    return parseInt(m[1], 10) === today.getMonth() + 1 &&
+           parseInt(m[2], 10) === today.getDate();
+  }
+
+  function getGreeting(name, birthDate) {
+    if (isBirthdayToday(birthDate)) return `Feliz aniversário, ${name}!`;
     const h = new Date().getHours();
     const s = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
     return `${s}, ${name}!`;
@@ -27,7 +37,7 @@ window.__page = (() => {
 
   function renderHome(ctx) {
     const greet = document.getElementById('home-greeting');
-    if (greet) greet.textContent = getGreeting(ctx?.displayName || 'Visitante');
+    if (greet) greet.textContent = getGreeting(window.firstName(ctx?.displayName) || 'Visitante', ctx?.birthDate);
 
     const data = getData();
     let total = 0, soon = 0, expired = 0;

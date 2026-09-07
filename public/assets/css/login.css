@@ -46,6 +46,10 @@
   color: var(--text);
 }
 
+.cf-turnstile-wrap {
+  margin-top: 4px;
+}
+
 #btn-login,
 #btn-token-login {
   margin-top: 6px;
