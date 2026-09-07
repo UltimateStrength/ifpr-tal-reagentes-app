@@ -1,12 +1,29 @@
 const express = require('express');
 const router  = express.Router();
-const bcrypt  = require('bcrypt');
+const slowDown = require('express-slow-down');
 const { getDB } = require('../db/connection');
 const { requireAuth } = require('../utils/auth.middleware');
 const { getFingerprint, generateSessionId } = require('../utils/session');
+const { comparePassword } = require('../utils/password');
+const { verifyTurnstile } = require('../utils/turnstile');
 
-router.post('/login', async (req, res) => {
-  const { user, pass, token } = req.body;
+// Rate limit progressivo (não bloqueia, só atrasa): as primeiras tentativas
+// passam sem atraso, depois cada tentativa adicional na mesma janela ganha
+// um delay maior. Escopo por IP.
+const loginSlowDown = slowDown({
+  windowMs: 15 * 60 * 1000,
+  delayAfter: 5,
+  delayMs: hits => (hits - 5) * 500,
+  maxDelayMs: 10000
+});
+
+router.post('/login', loginSlowDown, async (req, res) => {
+  const { user, pass, token, turnstileToken } = req.body;
+
+  const validCaptcha = await verifyTurnstile(turnstileToken, req.ip);
+  if (!validCaptcha) {
+    return res.status(400).json({ error: 'Verificação de segurança falhou. Recarregue a página e tente de novo.' });
+  }
 
   const db = getDB();
 
@@ -42,13 +59,11 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ error: 'Usuário e senha obrigatórios' });
   }
 
-  const found = await db.collection('users').findOne({
-    $or: [{ username: user }, { email: user }]
-  });
+  const found = await db.collection('users').findOne({ email: user });
 
   if (!found) return res.status(401).json({ error: 'Credenciais inválidas' });
 
-  const valid = await bcrypt.compare(pass, found.passwordHash);
+  const valid = await comparePassword(pass, found.passwordHash);
   if (!valid) return res.status(401).json({ error: 'Credenciais inválidas' });
 
   req.session.authenticated = true;
@@ -56,13 +71,15 @@ router.post('/login', async (req, res) => {
   req.session.role          = found.role;
   req.session.username      = found.username;
   req.session.displayName   = found.displayName || found.username;
+  req.session.birthDate     = found.birthDate || null;
   req.session.sessionId     = generateSessionId();
   req.session.fingerprint   = getFingerprint(req);
 
   res.json({
     ok: true,
     role: found.role,
-    displayName: req.session.displayName
+    displayName: req.session.displayName,
+    birthDate: req.session.birthDate
   });
 });
 
@@ -75,7 +92,8 @@ router.get('/check', requireAuth, (req, res) => {
   res.json({
     ok: true,
     role: req.session.role,
-    displayName: req.session.displayName
+    displayName: req.session.displayName,
+    birthDate: req.session.birthDate || null
   });
 });
 
