@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { connectDB } = require('../db/connection');
-const bcrypt = require('bcrypt');
+const { hashPassword } = require('../utils/password');
 
 async function seed() {
   const db = await connectDB();
@@ -12,11 +12,11 @@ async function seed() {
     process.exit(0);
   }
 
-  const hash = await bcrypt.hash(process.env.ADMIN_PASS, 12);
+  const hash = await hashPassword(process.env.ADMIN_PASS);
 
   await users.insertOne({
     username: 'developer',
-    displayName: 'Marcos',
+    displayName: 'Marcos Jessé Ferreira Padilha',
     email: process.env.ADMIN_USER,
     passwordHash: hash,
     role: 'developer',

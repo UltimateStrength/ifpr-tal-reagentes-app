@@ -13,6 +13,7 @@ const usersRoutes      = require('./routes/users.routes');
 const historyRoutes    = require('./routes/history.routes');
 const tokensRoutes     = require('./routes/tokens.routes');
 const armariosRoutes   = require('./routes/armarios.routes');
+const configRoutes     = require('./routes/config.routes');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -44,6 +45,7 @@ app.use('/api/users',      usersRoutes);
 app.use('/api/history',    historyRoutes);
 app.use('/api/tokens',     tokensRoutes);
 app.use('/api/armarios', armariosRoutes);
+app.use('/api/config',  configRoutes);
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

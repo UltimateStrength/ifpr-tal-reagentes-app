@@ -13,9 +13,12 @@ window.__page = (() => {
     viewer:    '#6b7280'
   };
 
-  let editingId = null;
+  let editingId  = null;
+  let canEdit    = false;
 
   async function init(pageName, ctx) {
+    canEdit = ctx?.role === 'developer';
+
     document.getElementById('users-back')
       ?.addEventListener('click', () => window.__appRouter.loadPage('menu'));
 
@@ -52,15 +55,17 @@ window.__page = (() => {
             </span>
           </div>
           <div style="display:flex;gap:8px;">
+            ${canEdit ? `
             <button class="btn-secondary btn-edit-user"
                     data-id="${u._id}"
                     data-displayname="${u.displayName || ''}"
                     data-username="${u.username}"
                     data-email="${u.email || ''}"
                     data-role="${u.role}"
+                    data-birthdate="${u.birthDate || ''}"
                     style="padding:8px 14px;font-size:0.82rem;">
               editar
-            </button>
+            </button>` : ''}
             <button class="btn-danger btn-delete-user"
                     data-id="${u._id}"
                     data-name="${u.displayName || u.username}"
@@ -76,7 +81,8 @@ window.__page = (() => {
           displayName: btn.dataset.displayname,
           username:    btn.dataset.username,
           email:       btn.dataset.email,
-          role:        btn.dataset.role
+          role:        btn.dataset.role,
+          birthDate:   btn.dataset.birthdate
         }));
       });
 
@@ -106,11 +112,9 @@ window.__page = (() => {
     document.getElementById('u-displayname').value = user?.displayName || '';
     document.getElementById('u-username').value    = user?.username    || '';
     document.getElementById('u-email').value       = user?.email       || '';
+    document.getElementById('u-birthdate').value   = user?.birthDate   || '';
     document.getElementById('u-password').value    = '';
     document.getElementById('u-role').value        = user?.role        || 'staff';
-
-    // Username não editável no modo edição
-    document.getElementById('u-username').disabled = !!user;
 
     // Senha opcional no modo edição
     passInput.placeholder = user
@@ -131,11 +135,12 @@ window.__page = (() => {
     const displayName = document.getElementById('u-displayname').value.trim();
     const username    = document.getElementById('u-username').value.trim();
     const email       = document.getElementById('u-email').value.trim();
+    const birthDate   = document.getElementById('u-birthdate').value;
     const password    = document.getElementById('u-password').value;
     const role        = document.getElementById('u-role').value;
 
-    if (!displayName || (!existing && !username) || (!existing && !password)) {
-      window.showToast('Preencha nome, usuário e senha.');
+    if (!displayName || !username || !email || (!existing && !password)) {
+      window.showToast('Preencha nome, usuário, e-mail e senha.');
       return;
     }
 
@@ -149,11 +154,11 @@ window.__page = (() => {
 
     try {
       if (existing) {
-        const body = { displayName, email, role };
+        const body = { username, displayName, email, role, birthDate };
         if (password) body.password = password;
         await API.put(`/users/${existing.id || existing._id}`, body);
       } else {
-        await API.post('/users', { username, displayName, email, password, role });
+        await API.post('/users', { username, displayName, email, password, role, birthDate });
       }
 
       document.getElementById('user-modal').hidden = true;

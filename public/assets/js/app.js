@@ -8,6 +8,7 @@ const AppRouter = (() => {
   let currentPage  = null;
   let currentRole  = null;
   let displayName  = null;
+  let birthDate    = null;
   let pollingTimer = null;
   const PAGE_CACHE = {};
 
@@ -114,6 +115,14 @@ const AppRouter = (() => {
   }
   window.formatDateBR = formatDateBR;
 
+  // Só de EXIBIÇÃO — o displayName completo continua guardado e usado
+  // normalmente em outras telas (ex: lista de Usuários).
+  function firstName(name) {
+    if (!name) return name;
+    return name.trim().split(/\s+/)[0];
+  }
+  window.firstName = firstName;
+
   function loadModule(src) {
     return new Promise((resolve) => {
       const existing = document.querySelector(`script[data-page-module="${src}"]`);
@@ -150,7 +159,7 @@ const AppRouter = (() => {
     pageContent.scrollTop = 0;
 
     await loadModule(PAGES[name].module);
-    window.__page?.init?.(name, { displayName, role: currentRole });
+    window.__page?.init?.(name, { displayName, role: currentRole, birthDate });
   }
 
   function startPolling() {
@@ -183,9 +192,10 @@ const AppRouter = (() => {
     window.__page = null;
   }
 
-  async function init(name, role) {
+  async function init(name, role, birth) {
     displayName = name;
     currentRole = role;
+    birthDate   = birth || null;
 
     loginScreen.hidden  = true;
     if (tokenScreen) tokenScreen.hidden = true;
@@ -210,7 +220,7 @@ const AppRouter = (() => {
   window.__appRouter = { init, goLogin, loadPage };
 
   API.get('/auth/check')
-    .then(r => init(r.displayName, r.role))
+    .then(r => init(r.displayName, r.role, r.birthDate))
     .catch(() => {});
 
   return { init, goLogin, loadPage };

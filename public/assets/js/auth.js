@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const btnLogin      = document.getElementById('btn-login');
   const inputUser     = document.getElementById('input-user');
   const inputPass     = document.getElementById('input-pass');
@@ -10,6 +10,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const tokenError    = document.getElementById('token-error');
   const loginScreen   = document.getElementById('login-screen');
   const tokenScreen   = document.getElementById('token-screen');
+
+  // Captcha Cloudflare Turnstile — bloqueia scripts simples que tentem
+  // autenticar direto contra a API sem passar por um navegador de verdade.
+  const turnstileTokens = { login: null, token: null };
+
+  function waitForTurnstile() {
+    return new Promise(resolve => {
+      if (window.turnstile) return resolve();
+      const check = setInterval(() => {
+        if (window.turnstile) { clearInterval(check); resolve(); }
+      }, 100);
+      setTimeout(() => { clearInterval(check); resolve(); }, 8000);
+    });
+  }
+
+  try {
+    const { turnstileSiteKey } = await API.get('/config');
+    if (turnstileSiteKey) {
+      await waitForTurnstile();
+      if (window.turnstile) {
+        window.turnstile.render('#turnstile-login-widget', {
+          sitekey: turnstileSiteKey,
+          callback: t => { turnstileTokens.login = t; }
+        });
+        window.turnstile.render('#turnstile-token-widget', {
+          sitekey: turnstileSiteKey,
+          callback: t => { turnstileTokens.token = t; }
+        });
+      }
+    }
+  } catch { /* sem chave configurada, segue sem captcha */ }
 
   inputPass?.addEventListener('keydown', e => {
     if (e.key === 'Enter') btnLogin.click();
@@ -40,12 +71,14 @@ document.addEventListener('DOMContentLoaded', () => {
     loginError.hidden  = true;
 
     try {
-      const result = await API.post('/auth/login', { user, pass });
-      window.__appRouter.init(result.displayName, result.role);
+      const result = await API.post('/auth/login', { user, pass, turnstileToken: turnstileTokens.login });
+      window.__appRouter.init(result.displayName, result.role, result.birthDate);
     } catch {
       loginError.hidden = false;
       inputPass.value   = '';
       inputPass.focus();
+      if (window.turnstile) window.turnstile.reset('#turnstile-login-widget');
+      turnstileTokens.login = null;
     } finally {
       btnLogin.disabled = false;
     }
@@ -59,10 +92,12 @@ document.addEventListener('DOMContentLoaded', () => {
     tokenError.hidden      = true;
 
     try {
-      const result = await API.post('/auth/login', { token });
+      const result = await API.post('/auth/login', { token, turnstileToken: turnstileTokens.token });
       window.__appRouter.init(result.displayName, result.role);
     } catch {
       tokenError.hidden = false;
+      if (window.turnstile) window.turnstile.reset('#turnstile-token-widget');
+      turnstileTokens.token = null;
     } finally {
       btnTokenLogin.disabled = false;
     }

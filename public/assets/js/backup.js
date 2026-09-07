@@ -44,7 +44,7 @@ window.__page = (() => {
   function init(pageName, ctx) {
     const nameEl = document.getElementById('menu-username');
     const roleEl = document.getElementById('menu-role');
-    if (nameEl) nameEl.textContent = ctx?.displayName || '—';
+    if (nameEl) nameEl.textContent = window.firstName(ctx?.displayName) || '—';
     if (roleEl) roleEl.textContent = ROLE_LABELS[ctx?.role] || ctx?.role || '—';
 
     const grid    = document.getElementById('menu-grid');
